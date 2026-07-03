@@ -2,7 +2,11 @@ package com.nativephp.plugins.native_ui.ui
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -212,26 +216,67 @@ object LazyGridRenderer {
         val gap = node.props.getFloat("gap", default = 0f).dp
         val horizontal = node.props.getBool("horizontal")
 
-        if (horizontal) {
-            LazyHorizontalGrid(
-                rows = GridCells.Fixed(columns),
-                horizontalArrangement = Arrangement.spacedBy(gap),
-                verticalArrangement = Arrangement.spacedBy(gap),
-                modifier = modifier,
-            ) {
-                items(node.children, key = { it.id }) { child ->
-                    NodeView(node = child)
+        // Screen scroll views are LazyColumns, so a grid nested in one is
+        // measured with an infinite max on its MAIN axis — the lazy grids
+        // throw on that instead of measuring. Lazy composition is
+        // meaningless without a bounded viewport anyway, so fall back to a
+        // non-lazy chunked grid that wraps its content. Applies to both
+        // orientations (a horizontal grid inside a horizontal scroller hits
+        // the same wall on width).
+        BoxWithConstraints(modifier = modifier) {
+            if (horizontal) {
+                if (constraints.hasBoundedWidth) {
+                    LazyHorizontalGrid(
+                        rows = GridCells.Fixed(columns),
+                        horizontalArrangement = Arrangement.spacedBy(gap),
+                        verticalArrangement = Arrangement.spacedBy(gap),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(node.children, key = { it.id }) { child ->
+                            NodeView(node = child)
+                        }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(gap)) {
+                        node.children.chunked(columns).forEach { columnChildren ->
+                            Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                                columnChildren.forEach { child ->
+                                    NodeView(node = child)
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(columns),
-                horizontalArrangement = Arrangement.spacedBy(gap),
-                verticalArrangement = Arrangement.spacedBy(gap),
-                modifier = modifier,
-            ) {
-                items(node.children, key = { it.id }) { child ->
-                    NodeView(node = child)
+            } else {
+                if (constraints.hasBoundedHeight) {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(columns),
+                        horizontalArrangement = Arrangement.spacedBy(gap),
+                        verticalArrangement = Arrangement.spacedBy(gap),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(node.children, key = { it.id }) { child ->
+                            NodeView(node = child)
+                        }
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(gap)) {
+                        node.children.chunked(columns).forEach { rowChildren ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(gap),
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                rowChildren.forEach { child ->
+                                    Box(modifier = Modifier.weight(1f)) {
+                                        NodeView(node = child)
+                                    }
+                                }
+                                repeat(columns - rowChildren.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
