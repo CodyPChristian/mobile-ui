@@ -4,7 +4,6 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Badge — small count or text marker, typically used as an overlay on nav
@@ -20,7 +19,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class Badge extends Element
 {
-    use HasA11y;
 
     protected string $type = 'badge';
 

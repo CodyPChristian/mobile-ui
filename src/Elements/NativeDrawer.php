@@ -4,7 +4,6 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Sentinel element produced by the native-ui layout-drawer chrome contributor
@@ -23,7 +22,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class NativeDrawer extends Element
 {
-    use HasA11y;
 
     protected string $type = 'native_drawer';
 

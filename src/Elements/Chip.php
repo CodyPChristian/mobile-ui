@@ -5,7 +5,6 @@ namespace Nativephp\NativeUi\Elements;
 use Native\Mobile\Concerns\HasPlatformIcon;
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Chip — compact selectable tag. Bool selected state, optional leading icon
@@ -16,7 +15,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class Chip extends Element
 {
-    use HasA11y;
     use HasPlatformIcon;
 
     protected string $type = 'chip';

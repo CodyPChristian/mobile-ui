@@ -7,11 +7,9 @@ use Native\Mobile\Edge\Element;
 use Native\Mobile\Icon\AndroidSymbol;
 use Native\Mobile\Icon\IconResolver;
 use Native\Mobile\Icon\IosSymbol;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 class Icon extends Element
 {
-    use HasA11y;
 
     protected string $type = 'icon';
 

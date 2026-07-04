@@ -5,7 +5,6 @@ namespace Nativephp\NativeUi\Elements;
 use Native\Mobile\Concerns\HasPlatformIcon;
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Tab — child of `<tab-row>`. Declares a label + optional leading icon.
@@ -13,7 +12,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class Tab extends Element
 {
-    use HasA11y;
     use HasPlatformIcon;
 
     protected string $type = 'tab';

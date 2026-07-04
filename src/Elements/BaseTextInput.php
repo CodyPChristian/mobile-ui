@@ -7,7 +7,6 @@ use Native\Mobile\Edge\Element;
 use Native\Mobile\Icon\AndroidSymbol;
 use Native\Mobile\Icon\IconResolver;
 use Native\Mobile\Icon\IosSymbol;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Shared base for the text input variants (`outlined-text-input`,
@@ -31,7 +30,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 abstract class BaseTextInput extends Element
 {
-    use HasA11y;
 
     /** @var array<string, mixed> */
     protected array $inputProps = [];

@@ -4,7 +4,6 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Toggle — binary on/off switch. Renders as a SwiftUI `Toggle` on iOS and an
@@ -21,7 +20,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class Toggle extends Element
 {
-    use HasA11y;
 
     protected string $type = 'toggle';
 

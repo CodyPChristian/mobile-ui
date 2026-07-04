@@ -4,7 +4,6 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * A grouped section inside a {@see NativeList}. Renders as a SwiftUI
@@ -19,7 +18,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class ListSection extends Element
 {
-    use HasA11y;
 
     protected string $type = 'list_section';
 

@@ -4,7 +4,6 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Modal — full-screen overlay presentation.
@@ -18,7 +17,6 @@ use Nativephp\NativeUi\Concerns\HasA11y;
  */
 class Modal extends Element
 {
-    use HasA11y;
 
     protected string $type = 'modal';
 

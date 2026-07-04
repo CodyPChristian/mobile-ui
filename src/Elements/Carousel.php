@@ -4,11 +4,9 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 class Carousel extends Element
 {
-    use HasA11y;
 
     protected string $type = 'carousel';
 

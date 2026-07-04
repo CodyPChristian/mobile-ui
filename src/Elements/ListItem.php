@@ -8,11 +8,9 @@ use Native\Mobile\Edge\Layouts\Builders\NavAction;
 use Native\Mobile\Icon\AndroidSymbol;
 use Native\Mobile\Icon\IconResolver;
 use Native\Mobile\Icon\IosSymbol;
-use Nativephp\NativeUi\Concerns\HasA11y;
 
 class ListItem extends Element
 {
-    use HasA11y;
 
     protected string $type = 'list_item';
 
