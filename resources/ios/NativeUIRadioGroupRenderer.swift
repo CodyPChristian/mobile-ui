@@ -26,7 +26,7 @@ struct NativeUIRadioGroupRenderer: View {
         VStack(alignment: .leading, spacing: 8) {
             if !label.isEmpty {
                 Text(label)
-                    .font(.system(size: theme.fontSm, weight: .medium))
+                    .nuiScaledFont(size: theme.fontSm, weight: .medium)
                     .foregroundStyle(theme.onSurfaceVariant)
             }
 
@@ -84,12 +84,13 @@ struct NativeUIRadioRenderer: View {
         }) {
             HStack(spacing: 8) {
                 Image(systemName: isSelected ? "circle.inset.filled" : "circle")
-                    .font(.system(size: 22))
+                    .nuiScaledFont(size: 22)
                     .foregroundColor(isSelected ? theme.primary : theme.onSurfaceVariant)
                 if !label.isEmpty {
                     Text(label).foregroundColor(theme.onSurface)
                 }
             }
+            .nuiMinTapTarget()
         }
         .buttonStyle(.plain)
         .disabled(disabled)

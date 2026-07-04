@@ -59,7 +59,9 @@ object TabRowRenderer {
                 tabs.forEachIndexed { index, tabNode ->
                     val tabLabel = tabNode.props.getString("label")
                     val tabIcon  = tabNode.props.getString("icon")
-                    val tabA11y  = tabNode.props.getString("a11y_label")
+                    // Explicit a11y_label wins; otherwise fall back to the
+                    // tab's label prop so icon-only tabs are never unlabeled.
+                    val tabA11y  = tabNode.props.getString("a11y_label").ifEmpty { tabLabel }
                     val isSelected = index == selectedIndex
 
                     Tab(

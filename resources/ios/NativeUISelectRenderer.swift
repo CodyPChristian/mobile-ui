@@ -29,7 +29,7 @@ struct NativeUISelectRenderer: View {
         VStack(alignment: .leading, spacing: 4) {
             if !label.isEmpty {
                 Text(label)
-                    .font(.system(size: theme.fontSm, weight: .medium))
+                    .nuiScaledFont(size: theme.fontSm, weight: .medium)
                     .foregroundStyle(theme.onSurfaceVariant)
             }
 
@@ -60,6 +60,9 @@ struct NativeUISelectRenderer: View {
             }
             .disabled(disabled)
             .opacity(disabled ? 0.6 : 1.0)
+            // Announce the current selection as the control's value so
+            // VoiceOver reads "…, <selected option>" on focus.
+            .accessibilityValue(selected)
         }
         .onAppear {
             if !initialized {

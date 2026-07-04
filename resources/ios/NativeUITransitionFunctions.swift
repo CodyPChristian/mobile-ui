@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 
 // MARK: - NativeUI.Transition.* bridge functions
 //
@@ -16,7 +17,16 @@ enum NativeUITransitionFunctions {
     /// `NativeUI.Transition.Set` — stage a transition for the next published tree.
     class Set: BridgeFunction {
         func execute(parameters: [String: Any]) throws -> [String: Any] {
-            let type = (parameters["type"] as? String) ?? "fade"
+            let requested = (parameters["type"] as? String) ?? "fade"
+
+            // Reduce Motion: swap directional/scaling transitions for a plain
+            // cross-fade. The Edge\Transition → AnyTransition mapping lives in
+            // core (`nativeScreenTransition(for:)`), so this staging point is
+            // where the substitution happens — "none" is left untouched since
+            // it's already motionless.
+            let type = (UIAccessibility.isReduceMotionEnabled && requested != "none" && requested != "fade")
+                ? "fade"
+                : requested
 
             if Thread.isMainThread {
                 NativeUIBridge.shared.setNavigationPending(transition: type)

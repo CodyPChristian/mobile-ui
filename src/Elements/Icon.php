@@ -7,9 +7,12 @@ use Native\Mobile\Edge\Element;
 use Native\Mobile\Icon\AndroidSymbol;
 use Native\Mobile\Icon\IconResolver;
 use Native\Mobile\Icon\IosSymbol;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 class Icon extends Element
 {
+    use HasA11y;
+
     protected string $type = 'icon';
 
     protected array $iconProps = [];
@@ -40,6 +43,9 @@ class Icon extends Element
         if (isset($attrs['dark-color']) || isset($attrs['darkColor'])) {
             $this->darkColor($attrs['dark-color'] ?? $attrs['darkColor']);
         }
+
+        // Icons are decorative (silent to screen readers) unless given a label.
+        $this->applyA11yAttributes($attrs);
     }
 
     /**

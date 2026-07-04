@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Circular activity indicator (spinner). Always indeterminate — use
@@ -14,6 +15,8 @@ use Native\Mobile\Edge\Element;
  */
 class ActivityIndicator extends Element
 {
+    use HasA11y;
+
     protected string $type = 'activity_indicator';
 
     /** @var array<string, mixed> */
@@ -29,9 +32,7 @@ class ActivityIndicator extends Element
         if (isset($attrs['size']))  { $this->size($attrs['size']); }
         if (isset($attrs['color'])) { $this->color((string) $attrs['color']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     /**
@@ -55,13 +56,6 @@ class ActivityIndicator extends Element
             'sm', 'small', 2 => 'sm',
             default => 'md',
         };
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->indicatorProps['a11y_label'] = $value;
 
         return $this;
     }

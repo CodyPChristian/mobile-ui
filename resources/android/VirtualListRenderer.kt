@@ -9,12 +9,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeElementBridge
 import com.nativephp.mobile.ui.nativerender.NativeUINode
@@ -97,7 +97,7 @@ object VirtualListRenderer {
                     Box(modifier = Modifier
                         .fillMaxWidth()
                         .height(estimatedRowHeight.dp)
-                        .background(Color(0xFFEEEEEE)))
+                        .background(MaterialTheme.colorScheme.surfaceVariant))
                 }
             }
         }

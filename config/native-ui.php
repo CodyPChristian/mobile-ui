@@ -27,6 +27,9 @@ return [
     | Dark mode is auto-derived from `light` when `dark` is not set. To opt
     | into explicit dark tokens, fill out the `dark` block.
     |
+    | The default pairs meet WCAG AA (4.5:1) — if you customize, keep each
+    | `on-*` color at 4.5:1 contrast against its background token.
+    |
     */
 
     'theme' => [
@@ -37,7 +40,7 @@ return [
             'on-primary'    => '#FFFFFF',
 
             // Secondary / muted action color.
-            'secondary'     => '#64748B',
+            'secondary'     => '#475569',
             'on-secondary'  => '#FFFFFF',
 
             // Surface = cards, sheets, dialogs. Background = page root.
@@ -55,11 +58,11 @@ return [
             'outline'       => '#CBD5E1',
 
             // Destructive actions — maps to `variant="destructive"` on components.
-            'destructive'    => '#DC2626',
+            'destructive'    => '#B91C1C',
             'on-destructive' => '#FFFFFF',
 
             // Tertiary accent — for highlights, badges, emphasis not covered by primary.
-            'accent'        => '#FB923C',
+            'accent'        => '#C2410C',
             'on-accent'     => '#FFFFFF',
         ],
 

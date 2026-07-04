@@ -17,6 +17,7 @@ object ImageRenderer {
         val p = node.props
         val src = p.getString("src")
         val fit = p.getInt("fit")
+        val alt = p.getString("alt")
         val tintArgb = p.getColor("tint_color", 0)
         val radius = node.style?.borderRadius ?: 0f
 
@@ -28,7 +29,9 @@ object ImageRenderer {
         if (src.isNotEmpty()) {
             AsyncImage(
                 model = src,
-                contentDescription = null,
+                // `alt` marks the image as meaningful; without it the image
+                // stays decorative (silent for TalkBack).
+                contentDescription = alt.ifEmpty { null },
                 modifier = imgModifier,
                 contentScale = resolveContentScale(fit),
                 colorFilter = if (tintArgb != 0) {

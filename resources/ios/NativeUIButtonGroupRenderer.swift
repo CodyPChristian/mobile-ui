@@ -41,7 +41,7 @@ struct NativeUIButtonGroupRenderer: View {
                         }
                     }) {
                         Text(label)
-                            .font(.system(size: theme.fontSm, weight: .medium))
+                            .nuiScaledFont(size: theme.fontSm, weight: .medium)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .frame(maxWidth: .infinity)

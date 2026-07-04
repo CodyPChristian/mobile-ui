@@ -45,6 +45,7 @@ struct NativeUIModalRenderer: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .font(.title2)
                                     .foregroundStyle(theme.onSurfaceVariant)
+                                    .nuiMinTapTarget()
                             }
                             .padding()
                             .accessibilityLabel("Close")
@@ -57,6 +58,8 @@ struct NativeUIModalRenderer: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 .background(theme.background.ignoresSafeArea())
+                // Contain VoiceOver focus within the presented modal content.
+                .accessibilityAddTraits(.isModal)
                 .modifier(A11yLabelModifier(label: a11yLabel))
             }
     }

@@ -37,13 +37,14 @@ struct NativeUICheckboxRenderer: View {
         }) {
             HStack(spacing: 8) {
                 Image(systemName: checked ? "checkmark.square.fill" : "square")
-                    .font(.system(size: 22))
+                    .nuiScaledFont(size: 22)
                     .foregroundColor(checked ? theme.primary : theme.onSurfaceVariant)
                 if !label.isEmpty {
                     Text(label)
                         .foregroundColor(theme.onSurface)
                 }
             }
+            .nuiMinTapTarget()
         }
         .buttonStyle(.plain)
         .disabled(disabled)
@@ -61,13 +62,26 @@ struct NativeUICheckboxRenderer: View {
                 lastSentValue = new
             }
         }
-        .accessibilityAddTraits(.isButton)
+        .modifier(A11yToggleTraitModifier())
+        .accessibilityValue(checked ? "Checked" : "Unchecked")
         .modifier(A11yLabelModifier(label: a11yLabel))
         .modifier(A11yHintModifier(hint: a11yHint))
     }
 }
 
 // MARK: - Accessibility modifiers (conditional)
+
+/// VoiceOver announces the checkbox as a toggle where the trait exists
+/// (iOS 17+), falling back to the button trait on older versions.
+private struct A11yToggleTraitModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.0, *) {
+            content.accessibilityAddTraits(.isToggle)
+        } else {
+            content.accessibilityAddTraits(.isButton)
+        }
+    }
+}
 
 private struct A11yLabelModifier: ViewModifier {
     let label: String

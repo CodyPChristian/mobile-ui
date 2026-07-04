@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Bottom sheet — dismissible panel that slides up from the bottom. Visibility
@@ -15,6 +16,8 @@ use Native\Mobile\Edge\Element;
  */
 class BottomSheet extends Element
 {
+    use HasA11y;
+
     protected string $type = 'bottom_sheet';
 
     /** @var array<string, mixed> */
@@ -32,9 +35,7 @@ class BottomSheet extends Element
         if (isset($attrs['visible'])) { $this->visible((bool) $attrs['visible']); }
         if (isset($attrs['detents'])) { $this->detents($attrs['detents']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     public function visible(bool $value = true): static
@@ -53,13 +54,6 @@ class BottomSheet extends Element
     public function detents(string $detents): static
     {
         $this->sheetProps['detents'] = $detents;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->sheetProps['a11y_label'] = $value;
 
         return $this;
     }

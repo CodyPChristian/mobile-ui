@@ -344,26 +344,37 @@ private struct ButtonContent: View {
                 ProgressView()
                     .controlSize(.small)
                 if !label.isEmpty {
-                    Text(label).font(.system(size: textSize, weight: .medium))
+                    Text(label).nuiScaledFont(size: textSize, weight: .medium)
                 }
             } else {
                 if !icon.isEmpty {
                     Image(systemName: getIconForName(icon))
-                        .font(.system(size: iconSize))
+                        .nuiScaledFont(size: iconSize)
                 }
                 if !label.isEmpty {
-                    Text(label).font(.system(size: textSize, weight: .medium))
+                    Text(label).nuiScaledFont(size: textSize, weight: .medium)
                 }
                 if !iconTrailing.isEmpty {
                     Image(systemName: getIconForName(iconTrailing))
-                        .font(.system(size: iconSize))
+                        .nuiScaledFont(size: iconSize)
                 }
             }
         }
+        // Merged up into the Button's accessibility element so VoiceOver
+        // announces the in-flight state.
+        .modifier(A11yLoadingValueModifier(loading: loading))
     }
 }
 
 // MARK: - Accessibility modifiers (conditional)
+
+private struct A11yLoadingValueModifier: ViewModifier {
+    let loading: Bool
+    func body(content: Content) -> some View {
+        if loading { content.accessibilityValue("Loading") }
+        else { content }
+    }
+}
 
 private struct A11yLabelModifier: ViewModifier {
     let label: String

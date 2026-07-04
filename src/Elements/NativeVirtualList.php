@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Windowed list. Native renders a LazyColumn/List with `count` logical
@@ -19,6 +20,8 @@ use Native\Mobile\Edge\Element;
  */
 class NativeVirtualList extends Element
 {
+    use HasA11y;
+
     protected string $type = 'virtual_list';
 
     protected array $listProps = [];
@@ -54,6 +57,8 @@ class NativeVirtualList extends Element
         if ($cb !== null) {
             $this->windowCallback = $cb;
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     protected function resolveProps(CallbackRegistry $registry): array

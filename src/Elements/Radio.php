@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Radio — child of `<radio-group>`. Declares a value + optional label.
@@ -13,6 +14,8 @@ use Native\Mobile\Edge\Element;
  */
 class Radio extends Element
 {
+    use HasA11y;
+
     protected string $type = 'radio';
 
     /** @var array<string, mixed> */
@@ -36,6 +39,8 @@ class Radio extends Element
         if (isset($attrs['radioValue'])) { $this->radioProps['value'] = (string) $attrs['radioValue']; }
         if (isset($attrs['label']))      { $this->label($attrs['label']); }
         if (! empty($attrs['disabled'])) { $this->disabled(); }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function label(string $label): static

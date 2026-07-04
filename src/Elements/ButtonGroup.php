@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * ButtonGroup — segmented single-choice selector. Options are a flat array of
@@ -16,6 +17,8 @@ use Native\Mobile\Edge\Element;
  */
 class ButtonGroup extends Element
 {
+    use HasA11y;
+
     protected string $type = 'button_group';
 
     /** @var array<string, mixed> */
@@ -36,9 +39,7 @@ class ButtonGroup extends Element
         if (isset($attrs['selected-index'])){ $this->selectedIndex((int) $attrs['selected-index']); }
         if (! empty($attrs['disabled']))    { $this->disabled(); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
             $this->syncMode($attrs['sync-mode'] ?? $attrs['syncMode']);
@@ -63,13 +64,6 @@ class ButtonGroup extends Element
     public function disabled(bool $value = true): static
     {
         $this->buttonGroupProps['disabled'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->buttonGroupProps['a11y_label'] = $value;
 
         return $this;
     }

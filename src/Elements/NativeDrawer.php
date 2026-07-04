@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Sentinel element produced by the native-ui layout-drawer chrome contributor
@@ -22,6 +23,8 @@ use Native\Mobile\Edge\Element;
  */
 class NativeDrawer extends Element
 {
+    use HasA11y;
+
     protected string $type = 'native_drawer';
 
     protected array $props = ['mode' => 'modal'];
@@ -39,6 +42,8 @@ class NativeDrawer extends Element
         if (isset($attrs['width']) && $attrs['width'] !== null) {
             $this->props['width'] = (int) $attrs['width'];
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     protected function resolveProps(CallbackRegistry $registry): array

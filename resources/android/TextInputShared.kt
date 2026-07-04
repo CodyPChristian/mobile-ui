@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -231,10 +230,14 @@ internal fun leadingIconSlot(name: String): (@Composable () -> Unit)? =
 internal fun trailingIconSlot(name: String): (@Composable () -> Unit)? =
     if (name.isEmpty()) null else ({ MaterialIcon(name = name, contentDescription = null) })
 
-/** Apply optional a11y label/hint to a modifier. */
-internal fun Modifier.withA11y(label: String, hint: String): Modifier {
-    var m = this
-    if (label.isNotEmpty()) m = m.semantics { contentDescription = label }
-    if (hint.isNotEmpty())  m = m.semantics { stateDescription   = hint }
-    return m
+/**
+ * Apply optional a11y label/hint to a modifier.
+ *
+ * The hint is merged into the contentDescription (TalkBack reads it right
+ * after the label) — never into stateDescription, which is reserved for
+ * actual widget state ("On", "Loading", ...).
+ */
+internal fun Modifier.nuiA11y(label: String, hint: String): Modifier {
+    val merged = listOf(label, hint).filter { it.isNotEmpty() }.joinToString(". ")
+    return if (merged.isEmpty()) this else semantics { contentDescription = merged }
 }

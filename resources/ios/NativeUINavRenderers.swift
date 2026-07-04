@@ -26,11 +26,13 @@ struct NativeUITopBarRenderer: View {
                     NativeElementBridge.sendSystemBackEvent()
                 } label: {
                     Image(systemName: "chevron.backward")
-                        .font(.system(size: 17, weight: .semibold))
+                        .nuiScaledFont(size: 17, weight: .semibold)
                         .foregroundColor(textColor)
                         .frame(width: 32, height: 32, alignment: .leading)
+                        .nuiMinTapTarget()
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Back")
             }
 
             VStack(alignment: .leading, spacing: 2) {
@@ -48,17 +50,30 @@ struct NativeUITopBarRenderer: View {
 
             ForEach(node.children.filter { $0.type == "top_bar_action" }) { action in
                 let icon = action.props.getString("icon", default: "ellipsis")
+                // Icon-only action buttons need a spoken name: prefer an
+                // explicit a11y_label, then the action's label prop, then a
+                // humanized icon name so VoiceOver never reads them unlabeled.
+                let a11y = action.props.getString("a11y_label")
+                let actionLabel = action.props.getString("label", default: "")
+                let effectiveA11y = !a11y.isEmpty
+                    ? a11y
+                    : (!actionLabel.isEmpty
+                        ? actionLabel
+                        : icon.replacingOccurrences(of: "_", with: " ")
+                              .replacingOccurrences(of: "-", with: " "))
                 Button {
                     if action.onPress != 0 {
                         NativeElementBridge.sendPressEvent(action.onPress, nodeId: action.id)
                     }
                 } label: {
                     Image(systemName: getIconForName(icon))
-                        .font(.system(size: 17, weight: .semibold))
+                        .nuiScaledFont(size: 17, weight: .semibold)
                         .foregroundColor(textColor)
                         .frame(width: 32, height: 32)
+                        .nuiMinTapTarget()
                 }
                 .buttonStyle(.plain)
+                .modifier(A11yLabelModifier(label: effectiveA11y))
             }
         }
         .padding(.horizontal, 16)
@@ -146,10 +161,10 @@ struct NativeUIBottomNavRenderer: View {
                     VStack(spacing: 4) {
                         ZStack(alignment: .topTrailing) {
                             Image(systemName: getIconForName(icon))
-                                .font(.system(size: 24))
+                                .nuiScaledFont(size: 24)
                             if !badge.isEmpty {
                                 Text(badge)
-                                    .font(.system(size: 10, weight: .bold))
+                                    .nuiScaledFont(size: 10, weight: .bold)
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 5)
                                     .padding(.vertical, 1)
@@ -171,12 +186,26 @@ struct NativeUIBottomNavRenderer: View {
                     .foregroundColor(active ? activeColor : inactiveColor)
                     .frame(maxWidth: .infinity)
                 }
+                // Announce the item name even when label_visibility hides the
+                // visible text, and expose the active state to VoiceOver.
+                .modifier(A11yLabelModifier(label: label))
+                .accessibilityAddTraits(active ? .isSelected : [])
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 8)
         .padding(.bottom, 8 + safeAreaBottom)   // home-indicator inset
         .background(barBackground)
+    }
+}
+
+// MARK: - Accessibility modifiers (conditional)
+
+private struct A11yLabelModifier: ViewModifier {
+    let label: String
+    func body(content: Content) -> some View {
+        if label.isEmpty { content }
+        else { content.accessibilityLabel(label) }
     }
 }
 

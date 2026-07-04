@@ -1,61 +1,73 @@
 ## nativephp/native-ui
 
-A NativePHP Mobile plugin
+Native UI components for NativePHP Mobile. Every element renders as a real
+platform primitive — Material3 on Android, SwiftUI on iOS — not a webview
+widget. Elements are declared in Blade with `<native:*>` tags or built
+programmatically with the fluent `Nativephp\NativeUi\Elements\*` API; both
+paths serialize to the same wire tree.
 
-### Installation
+### Core rules
 
-```bash
-composer require nativephp/native-ui
-```
-
-### PHP Usage (Livewire/Blade)
-
-Use the `NativeUI` facade:
+- Visual styling is theme-driven ("Model 3"): buttons, inputs, toggles, and
+  other controls take their colors, radii, and typography from the theme
+  (`Nativephp\NativeUi\Theme`). Use semantic props like `variant="primary"`
+  instead of per-instance colors — per-instance visual overrides on these
+  controls are intentionally ignored.
+- Bind state with `native:model="property"` (works on toggle, checkbox, chip,
+  slider, select, radio-group, button-group, tab-row, and the text inputs).
+  Use `.live` / `.blur` / `.debounce.Xms` modifiers to control sync frequency.
+- Wire callbacks with event attributes (`@press`, `@change`, `@submit`,
+  `@dismiss`) pointing at public methods on the component.
 
 @verbatim
-<code-snippet name="Using NativeUI Facade" lang="php">
-use Nativephp\NativeUi\Facades\NativeUI;
-
-// Execute the plugin functionality
-$result = NativeUI::execute(['option1' => 'value']);
-
-// Get the current status
-$status = NativeUI::getStatus();
+<code-snippet name="Declaring native elements in Blade" lang="blade">
+<native:column class="gap-4 p-4">
+    <native:outlined-text-input label="Email" native:model.blur="email" />
+    <native:toggle label="Notifications" native:model="notify" />
+    <native:button variant="primary" @press="save">Save</native:button>
+</native:column>
 </code-snippet>
 @endverbatim
 
-### Available Methods
+### Accessibility
 
-- `NativeUI::execute()`: Execute the plugin functionality
-- `NativeUI::getStatus()`: Get the current status
+Screen-reader support rides on two props that every element accepts:
+`a11y-label` (what VoiceOver / TalkBack announces; maps to
+`accessibilityLabel` on iOS and `contentDescription` on Android) and
+`a11y-hint` (supplementary usage guidance, read after the label; maps to
+`accessibilityHint` on iOS and is appended to the content description on
+Android). Both are also available fluently as `->a11yLabel()` / `->a11yHint()`.
 
-### Events
-
-- `NativeUICompleted`: Listen with `#[OnNative(NativeUICompleted::class)]`
+- ALWAYS set `a11y-label` on icon-only buttons, chips, and tabs — with no
+  visible text there is nothing for the screen reader to announce.
+- Icons are decorative by default: an `<native:icon>` without `a11y-label` is
+  silent to screen readers. Give it a label only when the icon itself carries
+  meaning.
+- Use `alt` on `<native:image>` for meaningful images; omit it for purely
+  decorative ones.
+- Use `a11y-hint` sparingly, for supplementary guidance the label doesn't
+  cover ("Double-tap to reorder"). Never repeat the label in the hint.
+- List items with a trailing icon button take `trailing-a11y-label` to label
+  that button separately from the row.
+- Text scales with the user's system font size on both platforms
+  automatically — don't hardcode layouts that break at larger type sizes.
 
 @verbatim
-<code-snippet name="Listening for NativeUI Events" lang="php">
-use Native\Mobile\Attributes\OnNative;
-use Nativephp\NativeUi\Events\NativeUICompleted;
-
-#[OnNative(NativeUICompleted::class)]
-public function handleNativeUICompleted($result, $id = null)
-{
-    // Handle the event
-}
+<code-snippet name="Accessible icon-only controls" lang="blade">
+<native:button icon="trash" a11y-label="Delete draft" a11y-hint="Deletes the draft permanently" @press="deleteDraft" />
+<native:icon name="checkmark.seal" a11y-label="Verified" />
+<native:list-item headline="Team meeting" trailingIconButton="ellipsis" trailing-a11y-label="More options" />
 </code-snippet>
 @endverbatim
 
-### JavaScript Usage (Vue/React/Inertia)
-
 @verbatim
-<code-snippet name="Using NativeUI in JavaScript" lang="javascript">
-import { nativeUI } from '@nativephp/native-ui';
+<code-snippet name="Fluent a11y API" lang="php">
+use Nativephp\NativeUi\Elements\Button;
 
-// Execute the plugin functionality
-const result = await nativeUI.execute({ option1: 'value' });
-
-// Get the current status
-const status = await nativeUI.getStatus();
+Button::make()
+    ->icon('plus')
+    ->a11yLabel('Add item')
+    ->a11yHint('Adds a new item to the list')
+    ->onPress('addItem');
 </code-snippet>
 @endverbatim

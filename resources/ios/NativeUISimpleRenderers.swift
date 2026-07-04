@@ -123,6 +123,7 @@ struct NativeUIImageRenderer: View {
         let tintArgb = p.getColor("tint_color", default: 0)
         let contentMode = resolveContentMode(fit)
         let cornerRadius = CGFloat(node.style?.borderRadius ?? 0)
+        let alt = p.getString("alt")
 
         if contentMode == .fill {
             // Cover / fill (object-cover, object-fill): the image fills its
@@ -139,6 +140,7 @@ struct NativeUIImageRenderer: View {
             Color.clear
                 .overlay(imageContent(src: src, contentMode: contentMode, tintArgb: tintArgb, cornerRadius: cornerRadius))
                 .clipped()
+                .modifier(ImageAltModifier(alt: alt))
         } else {
             // Fit (default / object-contain / scale-down / none): the image
             // is letterboxed and never overflows, so render it directly.
@@ -147,6 +149,7 @@ struct NativeUIImageRenderer: View {
             // `<image class="w-full">` lays out at its natural ratio like an
             // HTML <img>. Within a definite frame it just letterboxes.
             imageContent(src: src, contentMode: contentMode, tintArgb: tintArgb, cornerRadius: cornerRadius)
+                .modifier(ImageAltModifier(alt: alt))
         }
     }
 
@@ -207,6 +210,22 @@ struct NativeUIImageRenderer: View {
             styled.clipShape(RoundedRectangle(cornerRadius: cornerRadius))
         } else {
             styled
+        }
+    }
+
+    /// HTML `<img alt>` semantics for VoiceOver: an `alt` prop makes the
+    /// image a labeled image element; no `alt` marks it decorative and hides
+    /// it from the accessibility tree entirely.
+    private struct ImageAltModifier: ViewModifier {
+        let alt: String
+        func body(content: Content) -> some View {
+            if alt.isEmpty {
+                content.accessibilityHidden(true)
+            } else {
+                content
+                    .accessibilityLabel(alt)
+                    .accessibilityAddTraits(.isImage)
+            }
         }
     }
 

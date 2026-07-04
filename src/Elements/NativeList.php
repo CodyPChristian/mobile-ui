@@ -4,9 +4,12 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 class NativeList extends Element
 {
+    use HasA11y;
+
     protected string $type = 'list';
 
     protected array $listProps = [];
@@ -43,6 +46,8 @@ class NativeList extends Element
         if (isset($attrs['on-end-reached']) || isset($attrs['onEndReached'])) {
             $this->onEndReached($attrs['on-end-reached'] ?? $attrs['onEndReached']);
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function horizontal(bool $value = true): static

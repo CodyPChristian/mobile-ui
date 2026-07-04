@@ -28,9 +28,12 @@ struct NativeUITextRenderer: View {
         if !text.isEmpty {
             // Style the `Text` itself (italic/underline/strikethrough on Text are
             // iOS 13+, keeping us below the iOS 16 View-level variants). Kerning
-            // is iOS 16+, so it's guarded.
+            // is iOS 16+, so it's guarded. The font itself is applied at the
+            // View level via `nuiScaledFont` so it participates in Dynamic
+            // Type; the Text-level decorations operate on that environment
+            // font.
             let styledText: Text = {
-                var t = Text(text).font(.system(size: CGFloat(fontSize), weight: fontWeight, design: fontDesign))
+                var t = Text(text)
                 if isItalic { t = t.italic() }
                 if isUnderline { t = t.underline() }
                 if isStrikethrough { t = t.strikethrough() }
@@ -41,6 +44,7 @@ struct NativeUITextRenderer: View {
             }()
 
             styledText
+                .nuiScaledFont(size: CGFloat(fontSize), weight: fontWeight, design: fontDesign)
                 .foregroundColor(Color(argb: color))
                 .multilineTextAlignment(textAlign)
                 .lineLimit(maxLines > 0 ? maxLines : nil)

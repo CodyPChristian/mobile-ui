@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * A grouped section inside a {@see NativeList}. Renders as a SwiftUI
@@ -18,6 +19,8 @@ use Native\Mobile\Edge\Element;
  */
 class ListSection extends Element
 {
+    use HasA11y;
+
     protected string $type = 'list_section';
 
     protected array $sectionProps = [];
@@ -41,6 +44,8 @@ class ListSection extends Element
         if (isset($attrs['footer'])) {
             $this->footer($attrs['footer']);
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function header(string $text): static

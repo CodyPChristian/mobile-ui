@@ -5,6 +5,7 @@ namespace Nativephp\NativeUi\Elements;
 use Native\Mobile\Concerns\HasPlatformIcon;
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Tab — child of `<tab-row>`. Declares a label + optional leading icon.
@@ -12,6 +13,7 @@ use Native\Mobile\Edge\Element;
  */
 class Tab extends Element
 {
+    use HasA11y;
     use HasPlatformIcon;
 
     protected string $type = 'tab';
@@ -34,9 +36,7 @@ class Tab extends Element
         if (isset($attrs['label'])) { $this->tabProps['label'] = $attrs['label']; }
         if (isset($attrs['icon']))  { $this->icon($attrs['icon']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->tabProps['a11y_label'] = $attrs['a11y-label'] ?? $attrs['a11yLabel'];
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     protected function resolveProps(CallbackRegistry $registry): array

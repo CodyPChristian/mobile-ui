@@ -12,9 +12,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUIBridge
 import com.nativephp.mobile.ui.nativerender.NativeUINode
@@ -50,9 +47,7 @@ object RadioGroupRenderer {
             }
         }
 
-        val groupModifier = modifier
-            .let { m -> if (a11yLabel.isNotEmpty()) m.semantics { contentDescription = a11yLabel } else m }
-            .let { m -> if (a11yHint.isNotEmpty())  m.semantics { stateDescription   = a11yHint  } else m }
+        val groupModifier = modifier.nuiA11y(a11yLabel, a11yHint)
 
         Column(modifier = groupModifier) {
             if (label.isNotEmpty()) {

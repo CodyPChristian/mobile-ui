@@ -22,6 +22,8 @@ object CarouselRenderer {
         val itemWidth = p.getFloat("item_width").let { if (it > 0f) it else 200f }
         val itemSpacing = p.getFloat("item_spacing").let { if (it > 0f) it else 8f }
 
+        val carouselModifier = modifier.nuiA11y(p.getString("a11y_label"), p.getString("a11y_hint"))
+
         val state = rememberCarouselState { node.children.size }
 
         when (variant) {
@@ -30,7 +32,7 @@ object CarouselRenderer {
                     state = state,
                     itemWidth = itemWidth.dp,
                     itemSpacing = itemSpacing.dp,
-                    modifier = modifier
+                    modifier = carouselModifier
                 ) { index ->
                     val child = node.children[index]
                     RenderNode(child, Modifier.clip(MaterialTheme.shapes.extraLarge))
@@ -41,7 +43,7 @@ object CarouselRenderer {
                     state = state,
                     preferredItemWidth = itemWidth.dp,
                     itemSpacing = itemSpacing.dp,
-                    modifier = modifier
+                    modifier = carouselModifier
                 ) { index ->
                     val child = node.children[index]
                     RenderNode(child, Modifier.clip(MaterialTheme.shapes.extraLarge))

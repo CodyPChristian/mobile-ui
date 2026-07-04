@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Badge — small count or text marker, typically used as an overlay on nav
@@ -19,6 +20,8 @@ use Native\Mobile\Edge\Element;
  */
 class Badge extends Element
 {
+    use HasA11y;
+
     protected string $type = 'badge';
 
     /** @var array<string, mixed> */
@@ -41,9 +44,7 @@ class Badge extends Element
         if (isset($attrs['label']))   { $this->label($attrs['label']); }
         if (isset($attrs['variant'])) { $this->variant((string) $attrs['variant']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     public function count(int $count): static
@@ -63,13 +64,6 @@ class Badge extends Element
     public function variant(string $variant): static
     {
         $this->badgeProps['variant'] = $variant;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->badgeProps['a11y_label'] = $value;
 
         return $this;
     }

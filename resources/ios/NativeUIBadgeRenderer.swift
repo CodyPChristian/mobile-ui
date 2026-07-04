@@ -45,7 +45,7 @@ struct NativeUIBadgeRenderer: View {
         }()
 
         Text(text)
-            .font(.system(size: 12, weight: .bold))
+            .nuiScaledFont(size: 12, weight: .bold)
             .foregroundColor(fg)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)

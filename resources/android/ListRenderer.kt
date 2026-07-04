@@ -117,7 +117,7 @@ object ListRenderer {
                                     } else {
                                         ListRow(row)
                                         if (separator && i < child.children.size - 1) {
-                                            HorizontalDivider(color = Color(0xFFE0E0E0))
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                         }
                                     }
                                 }
@@ -129,7 +129,7 @@ object ListRenderer {
                             item(key = child.id) {
                                 ListRow(child)
                                 if (separator && index < node.children.size - 1) {
-                                    HorizontalDivider(color = Color(0xFFE0E0E0))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                                 }
                             }
                         }
@@ -388,7 +388,9 @@ private fun SwipeActionsRow(
             Modifier
                 .fillMaxWidth()
                 .offset(x = offsetDp)
-                .background(Color.White)
+                // Opaque theme surface (not hardcoded white) so the action
+                // drawers stay hidden behind the row in dark mode too.
+                .background(MaterialTheme.colorScheme.surface)
                 .pointerInput(nodeKey) {
                     detectHorizontalDragGestures(
                         onDragEnd = {

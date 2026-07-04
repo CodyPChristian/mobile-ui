@@ -79,6 +79,11 @@ struct NativeUIListItemRenderer: View {
                         .foregroundColor(supportingColor != 0 ? Color(argb: supportingColor) : .secondary)
                 }
             }
+            // Read overline/headline/supporting as one VoiceOver element
+            // instead of three separate swipe stops. Trailing interactive
+            // controls (icon_button / menu) stay outside this container so
+            // they remain individually focusable.
+            .accessibilityElement(children: .combine)
 
             Spacer()
 
@@ -110,7 +115,7 @@ struct NativeUIListItemRenderer: View {
                 ZStack {
                     Circle().fill(Color(argb: iconBgColor))
                     Image(systemName: getIconForName(value))
-                        .font(.system(size: 18, weight: .medium))
+                        .nuiScaledFont(size: 18, weight: .medium)
                         .foregroundColor(.white)
                 }
                 .frame(width: 40, height: 40)
@@ -120,6 +125,7 @@ struct NativeUIListItemRenderer: View {
                     .foregroundColor(.secondary)
             }
         case "avatar":
+            // Decorative — the row's text content carries the meaning.
             AsyncImage(url: URL(string: value)) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
@@ -127,16 +133,20 @@ struct NativeUIListItemRenderer: View {
             }
             .frame(width: 40, height: 40)
             .clipShape(Circle())
+            .accessibilityHidden(true)
         case "monogram":
+            // Decorative — initials duplicate the headline for VoiceOver.
             let bgColor = monogramColor != 0 ? Color(argb: monogramColor) : Color.accentColor
             ZStack {
                 Circle().fill(bgColor)
                 Text(String(value.prefix(2)).uppercased())
-                    .font(.system(size: 16, weight: .medium))
+                    .nuiScaledFont(size: 16, weight: .medium)
                     .foregroundColor(.white)
             }
             .frame(width: 40, height: 40)
+            .accessibilityHidden(true)
         case "image":
+            // Decorative — the row's text content carries the meaning.
             AsyncImage(url: URL(string: value)) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
@@ -144,6 +154,7 @@ struct NativeUIListItemRenderer: View {
             }
             .frame(width: 56, height: 56)
             .clipShape(RoundedRectangle(cornerRadius: 4))
+            .accessibilityHidden(true)
         case "checkbox":
             Image(systemName: "square")
                 .foregroundColor(.secondary)
@@ -165,7 +176,7 @@ struct NativeUIListItemRenderer: View {
             HStack(spacing: 6) {
                 ForEach(badges) { b in
                     Image(systemName: getIconForName(b.icon))
-                        .font(.system(size: 15))
+                        .nuiScaledFont(size: 15)
                         .foregroundColor(parseListItemHex(b.color) ?? .secondary)
                 }
             }
@@ -185,6 +196,13 @@ struct NativeUIListItemRenderer: View {
             Text(value)
                 .foregroundColor(textColor != 0 ? Color(argb: textColor) : .secondary)
         case "icon_button":
+            // Spoken name for the icon-only trailing button: explicit
+            // `trailing_a11y_label` prop first, then a humanized icon name.
+            let trailingA11y = node.props.getString("trailing_a11y_label")
+            let effectiveTrailingA11y = !trailingA11y.isEmpty
+                ? trailingA11y
+                : value.replacingOccurrences(of: "_", with: " ")
+                       .replacingOccurrences(of: "-", with: " ")
             // When the row has `:trailing-menu` attached, the trailing
             // icon button becomes a Menu trigger instead of a plain
             // press. SwiftUI Menu absorbs the tap to open the dropdown,
@@ -197,16 +215,17 @@ struct NativeUIListItemRenderer: View {
                         listItemMenuItem(item)
                     }
                 } label: {
-                    // `.contentShape(Rectangle())` expands the tap target
-                    // to the full 24×24 frame; without it only the
-                    // symbol's opaque pixels respond, which makes the
-                    // ellipsis glyph (mostly empty space) almost
-                    // un-tappable.
+                    // `.nuiMinTapTarget()` expands the tap target to a
+                    // 44×44 hit area (with `.contentShape(Rectangle())`);
+                    // without it only the symbol's opaque pixels respond,
+                    // which makes the ellipsis glyph (mostly empty space)
+                    // almost un-tappable.
                     Image(systemName: getIconForName(value))
                         .frame(width: 24, height: 24)
                         .foregroundColor(iconColor != 0 ? Color(argb: iconColor) : .secondary)
-                        .contentShape(Rectangle())
+                        .nuiMinTapTarget()
                 }
+                .accessibilityLabel(effectiveTrailingA11y)
             } else {
                 Button(action: {
                     let onPressCb = node.props.getCallbackId("on_trailing_press")
@@ -217,7 +236,9 @@ struct NativeUIListItemRenderer: View {
                     Image(systemName: getIconForName(value))
                         .frame(width: 24, height: 24)
                         .foregroundColor(iconColor != 0 ? Color(argb: iconColor) : .secondary)
+                        .nuiMinTapTarget()
                 }
+                .accessibilityLabel(effectiveTrailingA11y)
             }
         case "switch":
             EmptyView() // Switch requires state management - handled at a higher level

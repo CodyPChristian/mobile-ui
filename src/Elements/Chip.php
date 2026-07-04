@@ -5,6 +5,7 @@ namespace Nativephp\NativeUi\Elements;
 use Native\Mobile\Concerns\HasPlatformIcon;
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasA11y;
 
 /**
  * Chip — compact selectable tag. Bool selected state, optional leading icon
@@ -15,6 +16,7 @@ use Native\Mobile\Edge\Element;
  */
 class Chip extends Element
 {
+    use HasA11y;
     use HasPlatformIcon;
 
     protected string $type = 'chip';
@@ -49,12 +51,7 @@ class Chip extends Element
         if (isset($attrs['icon']))     { $this->icon($attrs['icon']); }
         if (! empty($attrs['disabled'])) { $this->disabled(); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
             $this->syncMode($attrs['sync-mode'] ?? $attrs['syncMode']);
@@ -80,20 +77,6 @@ class Chip extends Element
     public function disabled(bool $value = true): static
     {
         $this->chipProps['disabled'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->chipProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->chipProps['a11y_hint'] = $value;
 
         return $this;
     }

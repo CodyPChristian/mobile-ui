@@ -3,6 +3,7 @@ package com.nativephp.plugins.native_ui.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Text
@@ -14,9 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUIBridge
 import com.nativephp.mobile.ui.nativerender.NativeUINode
@@ -59,24 +58,32 @@ object CheckboxRenderer {
             disabledUncheckedColor = theme.outline.copy(alpha = 0.38f),
         )
 
-        val rowModifier = modifier
-            .let { m -> if (a11yLabel.isNotEmpty()) m.semantics { contentDescription = a11yLabel } else m }
-            .let { m -> if (a11yHint.isNotEmpty())  m.semantics { stateDescription   = a11yHint  } else m }
+        val onChanged = { new: Boolean ->
+            checked = new
+            lastSentValue = new
+            if (onChangeCb != 0) {
+                NativeUIBridge.sendCheckboxChangeEvent(onChangeCb, node.id, new)
+            }
+        }
 
+        // toggleable on the row merges descendants into ONE TalkBack focus
+        // stop and makes the label itself a tap target; the inner Checkbox
+        // gets onCheckedChange = null so there's no nested second target.
         Row(
-            modifier = rowModifier,
+            modifier = modifier
+                .nuiA11y(a11yLabel, a11yHint)
+                .toggleable(
+                    value = checked,
+                    enabled = !disabled,
+                    role = Role.Checkbox,
+                    onValueChange = onChanged,
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Checkbox(
                 checked = checked,
-                onCheckedChange = { new ->
-                    checked = new
-                    lastSentValue = new
-                    if (onChangeCb != 0) {
-                        NativeUIBridge.sendCheckboxChangeEvent(onChangeCb, node.id, new)
-                    }
-                },
+                onCheckedChange = null,
                 enabled = !disabled,
                 colors = colors,
             )
