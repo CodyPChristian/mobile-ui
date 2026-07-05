@@ -6,7 +6,9 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUINode
@@ -35,9 +37,14 @@ object ActivityIndicatorRenderer {
             else -> 32.dp
         }
 
+        // Always announce something ("Loading" fallback) and mark the node a
+        // polite live region so TalkBack reports the spinner appearing.
         val indicatorModifier = modifier
             .size(sizeDp)
-            .let { m -> if (a11yLabel.isNotEmpty()) m.semantics { contentDescription = a11yLabel } else m }
+            .semantics {
+                contentDescription = a11yLabel.ifEmpty { "Loading" }
+                liveRegion = LiveRegionMode.Polite
+            }
 
         CircularProgressIndicator(
             modifier = indicatorModifier,

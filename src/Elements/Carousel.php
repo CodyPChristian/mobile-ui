@@ -7,6 +7,7 @@ use Native\Mobile\Edge\Element;
 
 class Carousel extends Element
 {
+
     protected string $type = 'carousel';
 
     protected array $carouselProps = [];
@@ -30,6 +31,8 @@ class Carousel extends Element
         if (isset($attrs['itemSpacing']) || isset($attrs['item-spacing'])) {
             $this->itemSpacing((float) ($attrs['itemSpacing'] ?? $attrs['item-spacing']));
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function variant(string $variant): static

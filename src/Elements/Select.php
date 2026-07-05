@@ -16,6 +16,7 @@ use Native\Mobile\Edge\Element;
  */
 class Select extends Element
 {
+
     protected string $type = 'select';
 
     /** @var array<string, mixed> */
@@ -36,12 +37,7 @@ class Select extends Element
         if (isset($attrs['options']))     { $this->options((array) $attrs['options']); }
         if (! empty($attrs['disabled']))  { $this->disabled(); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
             $this->syncMode($attrs['sync-mode'] ?? $attrs['syncMode']);
@@ -80,20 +76,6 @@ class Select extends Element
     public function disabled(bool $value = true): static
     {
         $this->selectProps['disabled'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->selectProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->selectProps['a11y_hint'] = $value;
 
         return $this;
     }

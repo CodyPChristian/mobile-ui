@@ -35,7 +35,9 @@ object GestureAreaRenderer {
         }
 
         Box(
-            modifier = modifier.pointerInput(panYId) {
+            modifier = modifier
+                .nuiA11y(node.props.getString("a11y_label"), node.props.getString("a11y_hint"))
+                .pointerInput(panYId) {
                 if (panYId == 0) return@pointerInput
                 detectVerticalDragGestures(
                     onDragStart = { /* no-op — store already holds the running value */ },

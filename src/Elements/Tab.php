@@ -34,9 +34,7 @@ class Tab extends Element
         if (isset($attrs['label'])) { $this->tabProps['label'] = $attrs['label']; }
         if (isset($attrs['icon']))  { $this->icon($attrs['icon']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->tabProps['a11y_label'] = $attrs['a11y-label'] ?? $attrs['a11yLabel'];
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     protected function resolveProps(CallbackRegistry $registry): array

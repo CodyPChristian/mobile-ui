@@ -14,6 +14,7 @@ use Native\Mobile\Edge\Element;
  */
 class ProgressBar extends Element
 {
+
     protected string $type = 'progress_bar';
 
     /** @var array<string, mixed> */
@@ -35,9 +36,7 @@ class ProgressBar extends Element
         if (isset($attrs['color']))      { $this->color((string) $attrs['color']); }
         if (isset($attrs['trackColor'])) { $this->trackColor((string) $attrs['trackColor']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     /**
@@ -70,13 +69,6 @@ class ProgressBar extends Element
     public function indeterminate(bool $value = true): static
     {
         $this->progressBarProps['indeterminate'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->progressBarProps['a11y_label'] = $value;
 
         return $this;
     }

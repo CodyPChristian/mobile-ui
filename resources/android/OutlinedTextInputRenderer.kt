@@ -97,7 +97,7 @@ object OutlinedTextInputRenderer {
                 text = filtered
                 dispatcher.onTextChanged(filtered)
             },
-            modifier = modifier.withA11y(props.a11yLabel, props.a11yHint),
+            modifier = modifier.nuiA11y(props.a11yLabel, props.a11yHint),
             enabled = props.enabled,
             readOnly = props.readOnly,
             interactionSource = interactionSource,

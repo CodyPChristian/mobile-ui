@@ -47,9 +47,17 @@ struct NativeDrawerHost<Content: View>: View {
     @ViewBuilder var content: Content
 
     @ObservedObject private var state = DrawerHostState.shared
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var dragOffset: CGFloat = 0
 
     private let edgeSwipeThreshold: CGFloat = 30
+
+    /// Slide animation for the drawer. Suppressed when the user has Reduce
+    /// Motion enabled — open/close state then applies instantly instead of
+    /// sliding (`withAnimation(nil)` / `.animation(nil, value:)`).
+    private var drawerAnimation: Animation? {
+        reduceMotion ? nil : .easeOut(duration: 0.25)
+    }
 
     /// Real top safe-area inset read straight from the window. The host's own
     /// nested GeometryReader reports an unreliable `safeAreaInsets.top` (it
@@ -160,22 +168,24 @@ struct NativeDrawerHost<Content: View>: View {
                 // ☰ affordance, top-leading, shown while the drawer is closed.
                 if !state.isOpen {
                     Button {
-                        withAnimation(.easeOut(duration: 0.25)) { state.isOpen = true }
+                        withAnimation(drawerAnimation) { state.isOpen = true }
                     } label: {
                         Image(systemName: "line.3.horizontal")
-                            .font(.system(size: 18, weight: .semibold))
+                            .nuiScaledFont(size: 18, weight: .semibold)
                             .foregroundColor(.primary)
                             .frame(width: 40, height: 40)
                             .background(.ultraThinMaterial, in: Circle())
+                            .nuiMinTapTarget()
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel("Open menu")
                     .padding(.leading, 12)
                     .padding(.top, windowSafeAreaTop + 6)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                     .zIndex(4)
                 }
             }
-            .animation(.easeOut(duration: 0.25), value: state.isOpen)
+            .animation(drawerAnimation, value: state.isOpen)
         }
         // Full-screen coordinate space — the wrapped content manages its own
         // safe-area inset (via the environment, like NativeTreeRenderer), so a
@@ -207,7 +217,7 @@ struct NativeDrawerHost<Content: View>: View {
     private func settleOpen(value: DragGesture.Value, width: CGFloat) {
         let velocity = value.predictedEndTranslation.width - value.translation.width
         let opened = value.translation.width > width * 0.3 || velocity > 300
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(drawerAnimation) {
             state.isOpen = opened
             dragOffset = 0
         }
@@ -216,14 +226,14 @@ struct NativeDrawerHost<Content: View>: View {
     private func settleClose(value: DragGesture.Value, width: CGFloat) {
         let velocity = value.predictedEndTranslation.width - value.translation.width
         let closed = abs(value.translation.width) > width * 0.3 || velocity < -300
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(drawerAnimation) {
             state.isOpen = !closed
             dragOffset = 0
         }
     }
 
     private func animateClosed() {
-        withAnimation(.easeOut(duration: 0.25)) {
+        withAnimation(drawerAnimation) {
             state.isOpen = false
             dragOffset = 0
         }

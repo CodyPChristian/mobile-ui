@@ -16,6 +16,7 @@ use Native\Mobile\Edge\Element;
  */
 class Checkbox extends Element
 {
+
     protected string $type = 'checkbox';
 
     /** @var array<string, mixed> */
@@ -34,12 +35,7 @@ class Checkbox extends Element
         if (isset($attrs['label']))    { $this->label($attrs['label']); }
         if (! empty($attrs['disabled'])) { $this->disabled(); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
             $this->syncMode($attrs['sync-mode'] ?? $attrs['syncMode']);
@@ -66,20 +62,6 @@ class Checkbox extends Element
     public function disabled(bool $value = true): static
     {
         $this->checkboxProps['disabled'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->checkboxProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->checkboxProps['a11y_hint'] = $value;
 
         return $this;
     }

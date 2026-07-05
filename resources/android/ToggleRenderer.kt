@@ -4,6 +4,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -15,9 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUIBridge
 import com.nativephp.mobile.ui.nativerender.NativeUINode
@@ -72,17 +71,26 @@ object ToggleRenderer {
             }
         }
 
-        val rowModifier = modifier
-            .let { m -> if (a11yLabel.isNotEmpty()) m.semantics { contentDescription = a11yLabel } else m }
-            .let { m -> if (a11yHint.isNotEmpty())  m.semantics { stateDescription   = a11yHint  } else m }
+        val rowModifier = modifier.nuiA11y(a11yLabel, a11yHint)
 
         if (label.isNotEmpty()) {
-            Row(modifier = rowModifier, verticalAlignment = Alignment.CenterVertically) {
+            // toggleable on the row merges descendants into ONE TalkBack focus
+            // stop and makes the label itself a tap target; the inner Switch
+            // gets onCheckedChange = null so there's no nested second target.
+            Row(
+                modifier = rowModifier.toggleable(
+                    value = checked,
+                    enabled = !disabled,
+                    role = Role.Switch,
+                    onValueChange = onChanged,
+                ),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(text = label, modifier = Modifier.weight(1f), color = theme.onSurface)
                 Spacer(modifier = Modifier.width(8.dp))
                 Switch(
                     checked = checked,
-                    onCheckedChange = onChanged,
+                    onCheckedChange = null,
                     enabled = !disabled,
                     colors = colors,
                 )

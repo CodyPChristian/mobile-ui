@@ -76,7 +76,10 @@ private struct VirtualListBody: View {
                     if let child = rowByIndex[index] {
                         NodeView(node: child).equatable()
                     } else {
-                        Color(.systemGray6).frame(height: estimatedRowHeight)
+                        // Placeholder skeleton — meaningless to VoiceOver.
+                        Color(.systemGray6)
+                            .frame(height: estimatedRowHeight)
+                            .accessibilityHidden(true)
                     }
                 }
                 .listRowInsets(EdgeInsets())

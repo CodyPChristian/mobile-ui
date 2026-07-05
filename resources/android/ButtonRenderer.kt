@@ -20,7 +20,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
@@ -80,11 +79,11 @@ object ButtonRenderer {
 
         val buttonModifier = modifier
             .defaultMinSize(minHeight = metrics.minHeight)
+            .nuiA11y(a11yLabel, a11yHint)
             .let { m ->
-                if (a11yLabel.isNotEmpty()) m.semantics { contentDescription = a11yLabel } else m
-            }
-            .let { m ->
-                if (a11yHint.isNotEmpty()) m.semantics { stateDescription = a11yHint } else m
+                // Correct stateDescription use — actual widget state (the
+                // spinner is visual-only), not an a11y hint.
+                if (loading) m.semantics { stateDescription = "Loading" } else m
             }
 
         val content: @Composable () -> Unit = {

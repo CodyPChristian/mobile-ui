@@ -18,6 +18,7 @@ use Native\Mobile\Edge\Element;
  */
 class ListSection extends Element
 {
+
     protected string $type = 'list_section';
 
     protected array $sectionProps = [];
@@ -41,6 +42,8 @@ class ListSection extends Element
         if (isset($attrs['footer'])) {
             $this->footer($attrs['footer']);
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function header(string $text): static

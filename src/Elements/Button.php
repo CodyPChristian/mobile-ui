@@ -33,6 +33,7 @@ use Native\Mobile\Icon\IosSymbol;
  */
 class Button extends Element
 {
+
     protected string $type = 'button';
 
     /** @var array<string, mixed> */
@@ -74,12 +75,7 @@ class Button extends Element
         if (isset($attrs['icon-trailing']) || isset($attrs['iconTrailing'])) {
             $this->iconTrailing($attrs['icon-trailing'] ?? $attrs['iconTrailing']);
         }
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         // Optional tap-to-open dropdown menu — see Pressable.php for the
         // wire shape. When `:menu` is set, tapping shadows `@press` and
@@ -161,20 +157,6 @@ class Button extends Element
                 $this->buttonProps['trailing_icon_variant'] = $r['variant'];
             }
         }
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->buttonProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->buttonProps['a11y_hint'] = $value;
 
         return $this;
     }

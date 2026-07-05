@@ -63,7 +63,7 @@ struct NativeUITextInputCore: View {
                     .focused($isFocused)
             }
         }
-        .font(.system(size: textSize))
+        .nuiScaledFont(size: textSize)
         .tint(tintColor)
         .keyboardType(keyboard)
         .disabled(disabled || readOnly)

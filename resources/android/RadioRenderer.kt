@@ -1,16 +1,17 @@
 package com.nativephp.plugins.native_ui.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUINode
 import com.nativephp.plugins.native_ui.NativeUITheme
@@ -52,16 +53,24 @@ object RadioRenderer {
             disabledUnselectedColor = theme.onSurfaceVariant.copy(alpha = 0.38f),
         )
 
+        // selectable on the row merges descendants into ONE TalkBack focus
+        // stop with a RadioButton role; the inner RadioButton gets
+        // onClick = null so there's no nested second tap target.
         Row(
             modifier = modifier
                 .fillMaxWidth()
-                .clickable(enabled = !disabled) { onSelect?.invoke(value) },
+                .selectable(
+                    selected = isSelected,
+                    enabled = !disabled,
+                    role = Role.RadioButton,
+                    onClick = { onSelect?.invoke(value) },
+                ),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             RadioButton(
                 selected = isSelected,
-                onClick = { onSelect?.invoke(value) },
+                onClick = null,
                 enabled = !disabled,
                 colors = colors,
             )

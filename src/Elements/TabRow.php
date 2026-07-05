@@ -13,6 +13,7 @@ use Native\Mobile\Edge\Element;
  */
 class TabRow extends Element
 {
+
     protected string $type = 'tab_row';
 
     /** @var array<string, mixed> */
@@ -36,9 +37,7 @@ class TabRow extends Element
         if (isset($attrs['selectedIndex'])) { $this->selectedIndex((int) $attrs['selectedIndex']); }
         if (isset($attrs['selected-index'])){ $this->selectedIndex((int) $attrs['selected-index']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
             $this->syncMode($attrs['sync-mode'] ?? $attrs['syncMode']);
@@ -50,13 +49,6 @@ class TabRow extends Element
         // Stored under `value` so native:model → `__syncProperty` writes
         // through the same key every other stateful component uses.
         $this->tabRowProps['value'] = $index;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->tabRowProps['a11y_label'] = $value;
 
         return $this;
     }

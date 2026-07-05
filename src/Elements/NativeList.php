@@ -7,6 +7,7 @@ use Native\Mobile\Edge\Element;
 
 class NativeList extends Element
 {
+
     protected string $type = 'list';
 
     protected array $listProps = [];
@@ -43,6 +44,8 @@ class NativeList extends Element
         if (isset($attrs['on-end-reached']) || isset($attrs['onEndReached'])) {
             $this->onEndReached($attrs['on-end-reached'] ?? $attrs['onEndReached']);
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function horizontal(bool $value = true): static

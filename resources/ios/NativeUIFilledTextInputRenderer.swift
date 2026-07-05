@@ -49,10 +49,19 @@ struct NativeUIFilledTextInputRenderer: View {
 
         let supportingColor: Color = isError ? theme.destructive : theme.onSurfaceVariant
 
+        // The visible label doubles as the field's accessibility label unless
+        // an explicit a11y_label override was provided. When the field is in
+        // an error state, the supporting text must be announced: it rides the
+        // hint channel, or the value channel if a11y_hint is already taken.
+        let effectiveA11yLabel = a11yLabel.isEmpty ? label : a11yLabel
+        let errorText = (isError && !supporting.isEmpty) ? supporting : ""
+        let effectiveA11yHint = a11yHint.isEmpty ? errorText : a11yHint
+        let errorA11yValue = a11yHint.isEmpty ? "" : errorText
+
         VStack(alignment: .leading, spacing: 4) {
             if !label.isEmpty {
                 Text(label)
-                    .font(.system(size: theme.fontSm, weight: .medium))
+                    .nuiScaledFont(size: theme.fontSm, weight: .medium)
                     .foregroundStyle(labelColor)
             }
 
@@ -60,12 +69,12 @@ struct NativeUIFilledTextInputRenderer: View {
                 HStack(spacing: 8) {
                     if !leadingIcon.isEmpty {
                         Image(systemName: getIconForName(leadingIcon))
-                            .font(.system(size: metrics.iconSize))
+                            .nuiScaledFont(size: metrics.iconSize)
                             .foregroundStyle(theme.onSurfaceVariant)
                     }
                     if !prefixText.isEmpty {
                         Text(prefixText)
-                            .font(.system(size: metrics.textSize))
+                            .nuiScaledFont(size: metrics.textSize)
                             .foregroundStyle(theme.onSurfaceVariant)
                     }
 
@@ -79,14 +88,14 @@ struct NativeUIFilledTextInputRenderer: View {
 
                     if !suffixText.isEmpty {
                         Text(suffixText)
-                            .font(.system(size: metrics.textSize))
+                            .nuiScaledFont(size: metrics.textSize)
                             .foregroundStyle(theme.onSurfaceVariant)
                     }
                     if loading {
                         ProgressView().controlSize(.small)
                     } else if !trailingIcon.isEmpty {
                         Image(systemName: getIconForName(trailingIcon))
-                            .font(.system(size: metrics.iconSize))
+                            .nuiScaledFont(size: metrics.iconSize)
                             .foregroundStyle(theme.onSurfaceVariant)
                     }
                 }
@@ -116,12 +125,13 @@ struct NativeUIFilledTextInputRenderer: View {
 
             if !supporting.isEmpty {
                 Text(supporting)
-                    .font(.system(size: theme.fontSm))
+                    .nuiScaledFont(size: theme.fontSm)
                     .foregroundStyle(supportingColor)
             }
         }
-        .modifier(A11yLabelModifier(label: a11yLabel))
-        .modifier(A11yHintModifier(hint: a11yHint))
+        .modifier(A11yLabelModifier(label: effectiveA11yLabel))
+        .modifier(A11yHintModifier(hint: effectiveA11yHint))
+        .modifier(A11yValueModifier(value: errorA11yValue))
     }
 
     // ─── Size metrics ────────────────────────────────────────────────────────
@@ -160,5 +170,13 @@ private struct A11yHintModifier: ViewModifier {
     func body(content: Content) -> some View {
         if hint.isEmpty { content }
         else { content.accessibilityHint(hint) }
+    }
+}
+
+private struct A11yValueModifier: ViewModifier {
+    let value: String
+    func body(content: Content) -> some View {
+        if value.isEmpty { content }
+        else { content.accessibilityValue(value) }
     }
 }

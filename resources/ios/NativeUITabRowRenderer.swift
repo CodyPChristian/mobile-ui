@@ -35,6 +35,16 @@ struct NativeUITabRowRenderer: View {
                             let icon  = tab.props.getString("icon")
                             let tabA11y = tab.props.getString("a11y_label")
                             let isSelected = index == selectedIndex
+                            // Icon-only tabs (no visible label) must still be
+                            // labeled for VoiceOver: prefer the explicit
+                            // a11y_label, then a humanized icon name. Tabs
+                            // with a visible label are read automatically.
+                            let effectiveA11y = !tabA11y.isEmpty
+                                ? tabA11y
+                                : (label.isEmpty
+                                    ? icon.replacingOccurrences(of: "_", with: " ")
+                                          .replacingOccurrences(of: "-", with: " ")
+                                    : "")
 
                             Button(action: {
                                 selectedIndex = index
@@ -48,12 +58,16 @@ struct NativeUITabRowRenderer: View {
                                         Image(systemName: getIconForName(icon))
                                     }
                                     if !label.isEmpty {
-                                        Text(label).font(.system(size: theme.fontSm, weight: .medium))
+                                        Text(label).nuiScaledFont(size: theme.fontSm, weight: .medium)
                                     }
                                 }
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 10)
                                 .foregroundStyle(isSelected ? theme.primary : theme.onSurfaceVariant)
+                                // Extend the hit area to 44pt without changing
+                                // the visual label/padding metrics.
+                                .frame(minHeight: 44)
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                             .overlay(alignment: .bottom) {
@@ -64,7 +78,7 @@ struct NativeUITabRowRenderer: View {
                                 }
                             }
                             .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
-                            .modifier(A11yLabelModifier(label: tabA11y))
+                            .modifier(A11yLabelModifier(label: effectiveA11y))
                         }
                     }
                 }

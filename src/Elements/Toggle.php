@@ -20,6 +20,7 @@ use Native\Mobile\Edge\Element;
  */
 class Toggle extends Element
 {
+
     protected string $type = 'toggle';
 
     /** @var array<string, mixed> */
@@ -38,12 +39,7 @@ class Toggle extends Element
         if (isset($attrs['value']))    { $this->value((bool) $attrs['value']); }
         if (! empty($attrs['disabled'])) { $this->disabled(); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         // Sync mode + debounce, normally populated by the `native:model`
         // directive expansion.
@@ -72,20 +68,6 @@ class Toggle extends Element
     public function disabled(bool $value = true): static
     {
         $this->toggleProps['disabled'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->toggleProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->toggleProps['a11y_hint'] = $value;
 
         return $this;
     }

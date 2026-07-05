@@ -17,6 +17,7 @@ use Native\Mobile\Edge\Element;
  */
 class Modal extends Element
 {
+
     protected string $type = 'modal';
 
     /** @var array<string, mixed> */
@@ -35,9 +36,7 @@ class Modal extends Element
         if (isset($attrs['dismissible']) || isset($attrs['dismissable'])) {
             $this->dismissible((bool) ($attrs['dismissible'] ?? $attrs['dismissable']));
         }
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
+        $this->applyA11yAttributes($attrs);
     }
 
     public function visible(bool $value = true): static
@@ -50,13 +49,6 @@ class Modal extends Element
     public function dismissible(bool $value = true): static
     {
         $this->modalProps['dismissible'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->modalProps['a11y_label'] = $value;
 
         return $this;
     }

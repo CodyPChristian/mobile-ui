@@ -18,6 +18,7 @@ use Native\Mobile\Edge\Element;
  */
 class Slider extends Element
 {
+
     protected string $type = 'slider';
 
     /** @var array<string, mixed> */
@@ -40,12 +41,7 @@ class Slider extends Element
 
         if (isset($attrs['size']))     { $this->size($attrs['size']); }
 
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         // Sync mode + debounce, normally populated by the `native:model`
         // directive expansion. Can also be set manually.
@@ -95,20 +91,6 @@ class Slider extends Element
     public function size(string $value): static
     {
         $this->sliderProps['size'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->sliderProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->sliderProps['a11y_hint'] = $value;
 
         return $this;
     }

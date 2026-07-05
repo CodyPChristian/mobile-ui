@@ -13,6 +13,7 @@ use Native\Mobile\Edge\Element;
  */
 class Radio extends Element
 {
+
     protected string $type = 'radio';
 
     /** @var array<string, mixed> */
@@ -36,6 +37,8 @@ class Radio extends Element
         if (isset($attrs['radioValue'])) { $this->radioProps['value'] = (string) $attrs['radioValue']; }
         if (isset($attrs['label']))      { $this->label($attrs['label']); }
         if (! empty($attrs['disabled'])) { $this->disabled(); }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     public function label(string $label): static

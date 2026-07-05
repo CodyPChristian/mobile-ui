@@ -18,12 +18,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -79,14 +84,21 @@ object TopBarRenderer {
                 // queue. The runloop catches type 8 (EventType.systemBack) and
                 // calls onBackPressed → back(), popping the navigation stack.
                 // Same path the device hardware back button uses.
+                // minimumInteractiveComponentSize grows the tap target to
+                // 48dp (glyph stays 24sp); the smaller end padding keeps the
+                // title gap roughly where it was (~12dp slack + 4dp).
                 Text(
                     text = getIconName("arrow_back"),
                     fontFamily = iconFont,
                     fontSize = 24.sp,
                     color = textColor,
-                    modifier = Modifier.padding(end = 16.dp).clickable {
-                        NativeElementBridge.sendSystemBackEvent()
-                    }
+                    modifier = Modifier
+                        .padding(end = 4.dp)
+                        .minimumInteractiveComponentSize()
+                        .clickable(role = Role.Button) {
+                            NativeElementBridge.sendSystemBackEvent()
+                        }
+                        .semantics { contentDescription = "Back" }
                 )
             }
             // Title + optional subtitle stacked
@@ -101,15 +113,21 @@ object TopBarRenderer {
             for (action in actions.take(3)) {
                 val icon = action.props.getString("icon", "more_vert")
                 val url = action.props.getString("url")
+                val actionLabel = action.props.getString("label")
                 Text(
                     text = getIconName(icon), fontFamily = iconFont, fontSize = 24.sp, color = textColor,
-                    modifier = Modifier.padding(start = 8.dp).clickable {
-                        if (url.isNotEmpty()) {
-                            try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
-                        } else if (action.onPress != 0) {
-                            NativeElementBridge.sendPressEvent(action.onPress, action.id)
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .clickable(role = Role.Button) {
+                            if (url.isNotEmpty()) {
+                                try { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } catch (_: Exception) {}
+                            } else if (action.onPress != 0) {
+                                NativeElementBridge.sendPressEvent(action.onPress, action.id)
+                            }
                         }
-                    }
+                        .let { m ->
+                            if (actionLabel.isNotEmpty()) m.semantics { contentDescription = actionLabel } else m
+                        }
                 )
             }
         }
@@ -174,9 +192,22 @@ object BottomNavRenderer {
                 }
 
                 Column(
+                    // selectable(role = Tab) lets TalkBack announce
+                    // "selected"/position; the min height guarantees a
+                    // >=48dp touch target. When label_visibility hides the
+                    // visible label, expose it as the contentDescription so
+                    // icon-only tabs aren't unlabeled.
                     modifier = Modifier.weight(1f)
-                        .clickable { if (item.onPress != 0) NativeElementBridge.sendPressEvent(item.onPress, item.id) }
-                        .padding(vertical = 8.dp),
+                        .defaultMinSize(minHeight = 48.dp)
+                        .selectable(
+                            selected = active,
+                            role = Role.Tab,
+                            onClick = { if (item.onPress != 0) NativeElementBridge.sendPressEvent(item.onPress, item.id) },
+                        )
+                        .padding(vertical = 8.dp)
+                        .let { m ->
+                            if (!showLabel && label.isNotEmpty()) m.semantics { contentDescription = label } else m
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Box wraps the icon at center; badge / news dot anchored

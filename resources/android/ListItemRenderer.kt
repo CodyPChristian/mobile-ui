@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -96,7 +97,7 @@ object ListItemRenderer {
                 )
             }
         } else if (pressCbId != 0) {
-            modifier.clickable(enabled = !disabled) {
+            modifier.clickable(enabled = !disabled, role = Role.Button) {
                 NativeUIBridge.sendPressEvent(pressCbId, node.id)
             }
         } else {
@@ -166,6 +167,7 @@ object ListItemRenderer {
                         disabled = disabled,
                         hasMenu = p.getBool("has_trailing_menu"),
                         menuItems = node.children.filter { it.type == "top_bar_action" },
+                        a11yLabel = p.getString("trailing_a11y_label"),
                     )
                 }
             },
@@ -197,6 +199,7 @@ object ListItemRenderer {
         return {
             when (effectiveType) {
                 "icon" -> {
+                    // Decorative — announcing the machine icon name is noise.
                     if (iconBgColor != 0) {
                         Box(
                             modifier = Modifier
@@ -206,7 +209,7 @@ object ListItemRenderer {
                         ) {
                             com.nativephp.mobile.ui.MaterialIcon(
                                 name = effectiveValue,
-                                contentDescription = effectiveValue,
+                                contentDescription = null,
                                 size = 22.dp,
                                 tint = Color.White
                             )
@@ -214,7 +217,7 @@ object ListItemRenderer {
                     } else {
                         com.nativephp.mobile.ui.MaterialIcon(
                             name = effectiveValue,
-                            contentDescription = effectiveValue,
+                            contentDescription = null,
                             size = 24.dp,
                             tint = if (iconColor != 0) Color(iconColor) else Color.Unspecified
                         )
@@ -232,14 +235,14 @@ object ListItemRenderer {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(Color(0xFFE0E0E0), CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                             )
                         },
                         error = {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(Color(0xFFE0E0E0), CircleShape)
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                             )
                         }
                     )
@@ -276,14 +279,14 @@ object ListItemRenderer {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .background(Color(0xFFE0E0E0), RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
                             )
                         },
                         error = {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .background(Color(0xFFE0E0E0), RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
                             )
                         }
                     )
@@ -368,18 +371,26 @@ object ListItemRenderer {
         disabled: Boolean,
         hasMenu: Boolean = false,
         menuItems: List<NativeUINode> = emptyList(),
+        a11yLabel: String = "",
     ): (@Composable () -> Unit)? {
         val effectiveType = type.ifEmpty {
             if (fallbackIcon.isNotEmpty()) "icon" else return null
         }
         val effectiveValue = value.ifEmpty { fallbackIcon }
+        // Interactive icon_button needs an accessible name: explicit
+        // `trailing_a11y_label` wins, else humanize the machine icon name
+        // ("more_vert" -> "more vert") so it's never unlabeled.
+        val iconButtonDescription = a11yLabel.ifEmpty {
+            effectiveValue.replace('_', ' ').replace('-', ' ')
+        }
 
         return {
             when (effectiveType) {
                 "icon" -> {
+                    // Decorative — announcing the machine icon name is noise.
                     com.nativephp.mobile.ui.MaterialIcon(
                         name = effectiveValue,
-                        contentDescription = effectiveValue,
+                        contentDescription = null,
                         size = 24.dp,
                         tint = if (iconColor != 0) Color(iconColor) else Color.Unspecified
                     )
@@ -429,7 +440,7 @@ object ListItemRenderer {
                             ) {
                                 com.nativephp.mobile.ui.MaterialIcon(
                                     name = effectiveValue,
-                                    contentDescription = effectiveValue,
+                                    contentDescription = iconButtonDescription,
                                     size = 24.dp,
                                     tint = if (iconColor != 0) Color(iconColor) else Color.Unspecified,
                                 )
@@ -454,7 +465,7 @@ object ListItemRenderer {
                         ) {
                             com.nativephp.mobile.ui.MaterialIcon(
                                 name = effectiveValue,
-                                contentDescription = effectiveValue,
+                                contentDescription = iconButtonDescription,
                                 size = 24.dp,
                                 tint = if (iconColor != 0) Color(iconColor) else Color.Unspecified
                             )

@@ -11,6 +11,7 @@ use Native\Mobile\Icon\IosSymbol;
 
 class ListItem extends Element
 {
+
     protected string $type = 'list_item';
 
     protected array $listItemProps = [];
@@ -112,6 +113,9 @@ class ListItem extends Element
         if (isset($attrs['trailingIconButton'])) {
             $this->trailingIconButton($attrs['trailingIconButton']);
         }
+        if (isset($attrs['trailing-a11y-label']) || isset($attrs['trailingA11yLabel'])) {
+            $this->trailingA11yLabel($attrs['trailing-a11y-label'] ?? $attrs['trailingA11yLabel']);
+        }
 
         // Optional `:trailing-menu` attribute attaches a tap-to-open menu
         // to the row's trailing slot. The renderer wraps the existing
@@ -198,6 +202,8 @@ class ListItem extends Element
         if (isset($attrs['trailing-badges']) && is_array($attrs['trailing-badges'])) {
             $this->trailingBadges($attrs['trailing-badges']);
         }
+
+        $this->applyA11yAttributes($attrs);
     }
 
     /**
@@ -402,6 +408,20 @@ class ListItem extends Element
                 $this->listItemProps['trailing_icon_variant'] = $r['variant'];
             }
         }
+
+        return $this;
+    }
+
+    /**
+     * Screen-reader label for the trailing icon button. Icon buttons have
+     * no visible text, so without this VoiceOver / TalkBack announce
+     * nothing useful. Stored as `trailing_a11y_label` alongside the other
+     * `trailing_*` props; iOS applies it as the button's
+     * `accessibilityLabel`, Android as its `contentDescription`.
+     */
+    public function trailingA11yLabel(string $value): static
+    {
+        $this->listItemProps['trailing_a11y_label'] = $value;
 
         return $this;
     }

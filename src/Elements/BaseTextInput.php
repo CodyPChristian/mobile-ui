@@ -30,6 +30,7 @@ use Native\Mobile\Icon\IosSymbol;
  */
 abstract class BaseTextInput extends Element
 {
+
     /** @var array<string, mixed> */
     protected array $inputProps = [];
 
@@ -86,12 +87,7 @@ abstract class BaseTextInput extends Element
 
         // Size + a11y
         if (isset($attrs['size']))        { $this->size($attrs['size']); }
-        if (isset($attrs['a11y-label']) || isset($attrs['a11yLabel'])) {
-            $this->a11yLabel($attrs['a11y-label'] ?? $attrs['a11yLabel']);
-        }
-        if (isset($attrs['a11y-hint']) || isset($attrs['a11yHint'])) {
-            $this->a11yHint($attrs['a11y-hint'] ?? $attrs['a11yHint']);
-        }
+        $this->applyA11yAttributes($attrs);
 
         // Sync mode + debounce (from `native:model` expansion, or set manually).
         if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
@@ -255,26 +251,12 @@ abstract class BaseTextInput extends Element
         return $this;
     }
 
-    // ── Size + a11y ──────────────────────────────────────────────────────────
+    // ── Size ─────────────────────────────────────────────────────────────────
 
     /** sm | md | lg. Default: md. */
     public function size(string $value): static
     {
         $this->inputProps['size'] = $value;
-
-        return $this;
-    }
-
-    public function a11yLabel(string $value): static
-    {
-        $this->inputProps['a11y_label'] = $value;
-
-        return $this;
-    }
-
-    public function a11yHint(string $value): static
-    {
-        $this->inputProps['a11y_hint'] = $value;
 
         return $this;
     }

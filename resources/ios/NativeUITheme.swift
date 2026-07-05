@@ -43,7 +43,7 @@ struct NativeUITokens: Equatable {
     static let fallback = NativeUITokens(
         primary:          Color(hex: "#0F766E"),
         onPrimary:        Color(hex: "#FFFFFF"),
-        secondary:        Color(hex: "#64748B"),
+        secondary:        Color(hex: "#475569"),
         onSecondary:      Color(hex: "#FFFFFF"),
         surface:          Color(hex: "#FFFFFF"),
         onSurface:        Color(hex: "#0F172A"),
@@ -52,9 +52,9 @@ struct NativeUITokens: Equatable {
         surfaceVariant:   Color(hex: "#F1F5F9"),
         onSurfaceVariant: Color(hex: "#475569"),
         outline:          Color(hex: "#CBD5E1"),
-        destructive:      Color(hex: "#DC2626"),
+        destructive:      Color(hex: "#B91C1C"),
         onDestructive:    Color(hex: "#FFFFFF"),
-        accent:           Color(hex: "#FB923C"),
+        accent:           Color(hex: "#C2410C"),
         onAccent:         Color(hex: "#FFFFFF"),
         radiusSm: 4, radiusMd: 8, radiusLg: 16, radiusFull: 9999,
         fontSm: 14, fontMd: 16, fontLg: 20, fontXl: 24,
@@ -163,6 +163,43 @@ private func cgf(_ any: Any?, fallback: CGFloat) -> CGFloat {
     if let n = any as? Int { return CGFloat(n) }
     if let n = any as? NSNumber { return CGFloat(truncating: n) }
     return fallback
+}
+
+// MARK: - Accessibility helpers
+
+/// Renders a fixed design-point font size through Dynamic Type so text tracks
+/// the user's preferred content size. `@ScaledMetric` scales the base size
+/// relative to `.body`, matching how UIFontMetrics scales custom fonts.
+struct NUIScaledFontModifier: ViewModifier {
+    @ScaledMetric private var size: CGFloat
+    private let weight: Font.Weight
+    private let design: Font.Design
+
+    init(size: CGFloat, weight: Font.Weight, design: Font.Design) {
+        _size = ScaledMetric(wrappedValue: size, relativeTo: .body)
+        self.weight = weight
+        self.design = design
+    }
+
+    func body(content: Content) -> some View {
+        content.font(.system(size: size, weight: weight, design: design))
+    }
+}
+
+extension View {
+    /// Dynamic-Type-aware replacement for `.font(.system(size:weight:design:))`.
+    /// Use this for all text (and glyph icons rendered as text) so type scales
+    /// with the user's accessibility settings.
+    func nuiScaledFont(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
+        modifier(NUIScaledFontModifier(size: size, weight: weight, design: design))
+    }
+
+    /// Ensures a minimum 44×44pt hit target (Apple HIG) without changing the
+    /// visual size of the content. Apply to small tappable controls.
+    func nuiMinTapTarget() -> some View {
+        frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+    }
 }
 
 extension Color {

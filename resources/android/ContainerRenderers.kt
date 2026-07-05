@@ -208,6 +208,12 @@ object CanvasRenderer {
  * without paying for them at first paint. Use in place of a manually
  * chunked row-of-row grid whenever the cell count is large enough to
  * matter.
+ *
+ * When the main axis is UNBOUNDED (the grid sits inside a scroll_view /
+ * scrollable column), Compose's lazy grids throw ("measured with an
+ * infinity maximum height constraints") where SwiftUI's LazyVGrid just
+ * sizes to content — so we fall back to a non-lazy chunked grid that
+ * wraps its content. Same visual result, no virtualization.
  */
 object LazyGridRenderer {
     @Composable

@@ -55,9 +55,9 @@ struct NativeUIChipRenderer: View {
             HStack(spacing: 6) {
                 if !iconName.isEmpty {
                     Image(systemName: getIconForName(iconName))
-                        .font(.system(size: 14))
+                        .nuiScaledFont(size: 14)
                 }
-                Text(label).font(.system(size: theme.fontSm, weight: .medium))
+                Text(label).nuiScaledFont(size: theme.fontSm, weight: .medium)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -70,6 +70,11 @@ struct NativeUIChipRenderer: View {
                 glassClear: glassClear,
                 hasUserBg: hasUserBg
             ))
+            // Extend the hit area to a 44pt-tall band without inflating the
+            // visual pill (the capsule background is painted above, so the
+            // extra frame height stays transparent).
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(disabled)
@@ -88,6 +93,7 @@ struct NativeUIChipRenderer: View {
             }
         }
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .modifier(A11yLabelModifier(label: a11yLabel))
         .modifier(A11yHintModifier(hint: a11yHint))
     }

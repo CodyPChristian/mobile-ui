@@ -10,6 +10,7 @@ use Native\Mobile\Icon\IosSymbol;
 
 class Icon extends Element
 {
+
     protected string $type = 'icon';
 
     protected array $iconProps = [];
@@ -40,6 +41,9 @@ class Icon extends Element
         if (isset($attrs['dark-color']) || isset($attrs['darkColor'])) {
             $this->darkColor($attrs['dark-color'] ?? $attrs['darkColor']);
         }
+
+        // Icons are decorative (silent to screen readers) unless given a label.
+        $this->applyA11yAttributes($attrs);
     }
 
     /**

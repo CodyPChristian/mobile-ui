@@ -26,6 +26,8 @@ struct NativeUIGestureAreaRenderer: View {
     var body: some View {
         let panYId = node.props.getInt("pan-y-id", default: 0)
         let panYInitial = CGFloat(node.props.getFloat("pan-y-initial", default: 0))
+        let a11yLabel = node.props.getString("a11y_label")
+        let a11yHint = node.props.getString("a11y_hint")
 
         VStack(spacing: 0) {
             ForEach(node.children) { child in
@@ -49,5 +51,25 @@ struct NativeUIGestureAreaRenderer: View {
                 store.seed(panYInitial, for: panYId)
             }
         }
+        .modifier(A11yLabelModifier(label: a11yLabel))
+        .modifier(A11yHintModifier(hint: a11yHint))
+    }
+}
+
+// MARK: - Accessibility modifiers (conditional)
+
+private struct A11yLabelModifier: ViewModifier {
+    let label: String
+    func body(content: Content) -> some View {
+        if label.isEmpty { content }
+        else { content.accessibilityLabel(label) }
+    }
+}
+
+private struct A11yHintModifier: ViewModifier {
+    let hint: String
+    func body(content: Content) -> some View {
+        if hint.isEmpty { content }
+        else { content.accessibilityHint(hint) }
     }
 }
