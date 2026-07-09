@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,6 +28,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -289,6 +291,17 @@ object LazyGridRenderer {
     }
 }
 
+/** Recursive descendant count — a cheap content signal that changes whenever a
+ *  message is added anywhere in a scroll-view's subtree (even inside a wrapping
+ *  <column>), used to re-trigger stick-to-bottom scrolling. */
+private fun totalDescendants(node: NativeUINode): Int {
+    var count = node.children.size
+    for (child in node.children) {
+        count += totalDescendants(child)
+    }
+    return count
+}
+
 object ScrollViewRenderer {
     @Composable
     fun Render(node: NativeUINode, modifier: Modifier) {
@@ -305,7 +318,32 @@ object ScrollViewRenderer {
                 }
             }
         } else {
-            LazyColumn(modifier = scrollModifier) {
+            // Chat-style bottom anchoring (`scroll-anchor="bottom"`): open at
+            // the bottom and follow new content. Keyed on the recursive
+            // descendant count (not direct children) so it fires even when
+            // messages sit inside a wrapping <column> — a common chat layout
+            // where the scroll-view has a single child. Scrolling to the last
+            // item with a max offset lands at the very bottom regardless of how
+            // the content is nested. Hooks are called unconditionally to satisfy
+            // Compose's rules; the work is gated on the prop.
+            val stickBottom = node.props.getString("scroll_anchor", "") == "bottom"
+            val listState = rememberLazyListState()
+            val didInitialScroll = remember { mutableStateOf(false) }
+            val contentSignal = if (stickBottom) totalDescendants(node) else 0
+
+            LaunchedEffect(stickBottom, contentSignal) {
+                if (stickBottom && node.children.isNotEmpty()) {
+                    val lastIndex = node.children.size - 1
+                    if (!didInitialScroll.value) {
+                        didInitialScroll.value = true
+                        listState.scrollToItem(lastIndex, Int.MAX_VALUE) // jump on open
+                    } else {
+                        listState.animateScrollToItem(lastIndex, Int.MAX_VALUE)
+                    }
+                }
+            }
+
+            LazyColumn(modifier = scrollModifier, state = listState) {
                 items(node.children, key = { it.id }) { child ->
                     NodeView(node = child)
                 }

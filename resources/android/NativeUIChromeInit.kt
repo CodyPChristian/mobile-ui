@@ -3,6 +3,7 @@ package com.nativephp.plugins.native_ui
 import android.content.Context
 import com.nativephp.mobile.ui.NativeUIThemeProvider
 import com.nativephp.mobile.ui.nativerender.NativeRootHostRegistry
+import com.nativephp.plugins.native_ui.ui.NativeFloatingOverlayHost
 import com.nativephp.plugins.native_ui.ui.NativeLayoutDrawerHost
 
 /**
@@ -20,6 +21,11 @@ fun registerNativeUIChrome(context: Context) {
     NativeRootHostRegistry.register("native-ui.drawer", consumes = "native_drawer") { root, content ->
         val drawerNode = root.children.firstOrNull { it.type == "native_drawer" }
         NativeLayoutDrawerHost(drawerNode = drawerNode, content = content)
+    }
+
+    NativeRootHostRegistry.register("native-ui.floating-overlay", consumes = "floating_overlay") { root, content ->
+        val overlayNode = root.children.firstOrNull { it.type == "floating_overlay" }
+        NativeFloatingOverlayHost(overlayNode = overlayNode, content = content)
     }
 
     // Supply the app's color scheme from native-ui's theme tokens. The lambda

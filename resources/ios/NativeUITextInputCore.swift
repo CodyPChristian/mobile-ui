@@ -42,6 +42,7 @@ struct NativeUITextInputCore: View {
         let onSubmitCb    = p.getCallbackId("on_submit")
         let syncMode      = p.getString("sync_mode", default: "live")
         let debounceMs    = p.getInt("debounce_ms", default: 300)
+        let keepFocus     = p.getBool("keep_focus_on_submit")
 
         // Apply `.foregroundColor` (not just `.foregroundStyle`) so the TYPED
         // text adopts `contentColor`. SwiftUI's TextField/SecureField don't
@@ -82,6 +83,13 @@ struct NativeUITextInputCore: View {
             if newServerValue != lastSentValue {
                 text = newServerValue
                 lastSentValue = newServerValue
+                // Send-BUTTON path (no `onSubmit`): a send clears the draft to
+                // empty. Keep the keyboard up by re-asserting focus. Opt-in via
+                // `keep-focus-on-submit`; only on a clear-to-empty so ordinary
+                // programmatic value pushes don't grab focus.
+                if keepFocus && newServerValue.isEmpty {
+                    DispatchQueue.main.async { isFocused = true }
+                }
             }
         }
         .onChange(of: text) { _, newValue in
@@ -99,11 +107,19 @@ struct NativeUITextInputCore: View {
             }
         }
         .onSubmit {
-            // Submit also acts as a commit point — flush pending, then
-            // dispatch submit.
+            // Submit also acts as a commit point — flush pending, then dispatch.
             flushPending(onChangeCb: onChangeCb)
             if onSubmitCb != 0 {
                 NativeElementBridge.sendSubmitEvent(onSubmitCb, nodeId: node.id, text: text)
+            }
+            // Chat "send and keep typing": SwiftUI resigns first responder on
+            // return by default. Re-assert focus so the keyboard stays up. NOTE:
+            // this causes a small keyboard "bounce" on return (resign → refocus)
+            // that the send button doesn't have — the smooth fix needs a
+            // UIKit-backed field (see notes), not the multiline workaround which
+            // mis-sized the field in the flex layout.
+            if keepFocus {
+                DispatchQueue.main.async { isFocused = true }
             }
         }
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct NativeUIScrollViewRenderer: View {
     let node: NativeUINode
@@ -8,6 +9,8 @@ struct NativeUIScrollViewRenderer: View {
         let showsIndicators = node.props.getBool("shows_indicators", default: true)
         let spacing = CGFloat(node.layout?.gap ?? 0)
         let axis = node.props.getString("axis", default: "")
+        let stickBottom = node.props.getString("scroll_anchor", default: "") == "bottom"
+        let messageSignal = stickBottom ? Self.descendantCount(node) : 0
 
         // 2D mode. Bypass the Lazy stacks (which force 1D layout) and use a
         // plain ZStack so each child renders at its declared frame. The
@@ -53,17 +56,77 @@ struct NativeUIScrollViewRenderer: View {
             }
             .scrollDismissesKeyboard(.interactively)
         } else {
-            ScrollView(.vertical, showsIndicators: showsIndicators) {
-                LazyVStack(alignment: .leading, spacing: spacing) {
-                    ForEach(node.children) { child in
-                        NodeView(node: child)
-                            .equatable()
-                            .frame(maxWidth: .infinity, alignment: .leading)
+            // Chat-style bottom anchoring (`scroll-anchor="bottom"`). Deterministic
+            // ScrollViewReader + a zero-height bottom anchor: scroll to it on
+            // appear (open at the latest message) and whenever the content grows
+            // (follow new messages). Works on every iOS version and with lazy
+            // content, unlike `.defaultScrollAnchor` which is iOS 17+ and flaky
+            // with LazyVStack. `messageSignal` is a recursive descendant count so
+            // it changes even when messages sit inside a wrapping <column>.
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: showsIndicators) {
+                    LazyVStack(alignment: .leading, spacing: spacing) {
+                        ForEach(node.children) { child in
+                            NodeView(node: child)
+                                .equatable()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        if stickBottom {
+                            Color.clear
+                                .frame(height: 1)
+                                .id(Self.bottomAnchorID)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .onAppear {
+                    guard stickBottom else { return }
+                    // Defer past first layout — lazy content isn't measured yet
+                    // inside onAppear, so an immediate scrollTo no-ops.
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .onChange(of: messageSignal) { _ in
+                    guard stickBottom else { return }
+                    withAnimation(.easeOut(duration: 0.25)) {
+                        proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+                    }
+                }
+                // The keyboard shrinks the scroll viewport (the screen shifts
+                // up for keyboard avoidance). Re-pin the latest message to the
+                // bottom so it stays visible just above the input row instead
+                // of hiding behind it, moving IN SYNC with the keyboard: a
+                // one-runloop `async` lets SwiftUI register the new (shrunk)
+                // safe area so `scrollTo` targets the final layout, and the
+                // scroll animates with the keyboard's own reported duration so
+                // both travel together.
+                .onReceive(NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillShowNotification)
+                ) { note in
+                    guard stickBottom else { return }
+                    let duration = (note.userInfo?[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+                    DispatchQueue.main.async {
+                        withAnimation(.easeOut(duration: duration)) {
+                            proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+                        }
+                    }
+                }
             }
-            .scrollDismissesKeyboard(.interactively)
         }
+    }
+
+    private static let bottomAnchorID = "nphp.scroll.bottom.anchor"
+
+    /// Recursive descendant count — a content signal that changes whenever a
+    /// message is added anywhere in the subtree (even inside a wrapping
+    /// <column> where the scroll-view itself has a single child).
+    private static func descendantCount(_ node: NativeUINode) -> Int {
+        var count = node.children.count
+        for child in node.children {
+            count += descendantCount(child)
+        }
+        return count
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.interaction.FocusInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,7 +98,10 @@ object OutlinedTextInputRenderer {
                 text = filtered
                 dispatcher.onTextChanged(filtered)
             },
-            modifier = modifier.nuiA11y(props.a11yLabel, props.a11yHint),
+            // Full width by default (parity with the iOS renderer's
+            // maxWidth: .infinity); an explicit width in `modifier` (FIXED
+            // layout mode) still wins since it comes later in the chain.
+            modifier = Modifier.fillMaxWidth().then(modifier).nuiA11y(props.a11yLabel, props.a11yHint),
             enabled = props.enabled,
             readOnly = props.readOnly,
             interactionSource = interactionSource,

@@ -1,6 +1,7 @@
 package com.nativephp.plugins.native_ui.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.LocalTextStyle
@@ -82,7 +83,10 @@ object BareTextInputRenderer {
                 lastSentValue = newText
                 props.dispatchChange?.invoke(newText)
             },
-            modifier = modifier,
+            // Full width by default (parity with the iOS renderer's
+            // maxWidth: .infinity); an explicit width in `modifier` (FIXED
+            // layout mode) still wins since it comes later in the chain.
+            modifier = Modifier.fillMaxWidth().then(modifier),
             enabled = !props.disabled,
             readOnly = props.readOnly,
             textStyle = LocalTextStyle.current.copy(
