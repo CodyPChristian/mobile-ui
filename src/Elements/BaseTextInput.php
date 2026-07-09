@@ -68,6 +68,9 @@ abstract class BaseTextInput extends Element
             $this->maxLength((int) ($attrs['maxLength'] ?? $attrs['max-length']));
         }
         if (! empty($attrs['multiline'])) { $this->multiline(); }
+        if (! empty($attrs['keepFocusOnSubmit']) || ! empty($attrs['keep-focus-on-submit']) || ! empty($attrs['keep-focus'])) {
+            $this->keepFocusOnSubmit();
+        }
         if (isset($attrs['maxLines']) || isset($attrs['max-lines'])) {
             $this->maxLines((int) ($attrs['maxLines'] ?? $attrs['max-lines']));
         }
@@ -185,6 +188,19 @@ abstract class BaseTextInput extends Element
     public function multiline(bool $value = true): static
     {
         $this->inputProps['multiline'] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Keep the keyboard up after the field is submitted (return key /
+     * `@submit`). Without this SwiftUI resigns first responder on return,
+     * dismissing the keyboard — the chat "send and keep typing" pattern
+     * wants the opposite. Blade: `keep-focus-on-submit` (or `keep-focus`).
+     */
+    public function keepFocusOnSubmit(bool $value = true): static
+    {
+        $this->inputProps['keep_focus_on_submit'] = $value;
 
         return $this;
     }
