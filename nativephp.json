@@ -415,6 +415,14 @@
             "android_renderer": "com.nativephp.plugins.native_ui.ui.EmptyRenderer",
             "ios_renderer": "NativeUIEmptyRenderer",
             "self_closing": false
+        },
+        {
+            "type": "floating_overlay",
+            "element": "Nativephp\\NativeUi\\Elements\\FloatingOverlay",
+            "blade": "Nativephp\\NativeUi\\Components\\FloatingOverlay",
+            "android_renderer": "com.nativephp.plugins.native_ui.ui.EmptyRenderer",
+            "ios_renderer": "NativeUIEmptyRenderer",
+            "self_closing": false
         }
     ],
     "bridge_functions": [

@@ -10,7 +10,9 @@ use Native\Mobile\Edge\Layouts\NativeLayout;
 use Native\Mobile\Edge\NativeComponent;
 use Native\Mobile\Edge\TailwindParser;
 use Nativephp\NativeUi\Builders\Drawer;
+use Nativephp\NativeUi\Builders\FloatingOverlay as FloatingOverlayBuilder;
 use Nativephp\NativeUi\Console\GenerateIconsCommand;
+use Nativephp\NativeUi\Elements\FloatingOverlay as FloatingOverlayElement;
 use Nativephp\NativeUi\Elements\NativeDrawer;
 
 class NativeUIServiceProvider extends ServiceProvider
@@ -63,6 +65,7 @@ class NativeUIServiceProvider extends ServiceProvider
         });
 
         $this->registerLayoutDrawer();
+        $this->registerFloatingOverlay();
 
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -117,6 +120,56 @@ class NativeUIServiceProvider extends ServiceProvider
             $drawer->addChild($contentElement);
 
             return $drawer;
+        });
+    }
+
+    /**
+     * Register the floating-overlay chrome contributor with core's chrome seam.
+     * Same shape as {@see registerLayoutDrawer()}: resolve the overlay for the
+     * screen (per-screen override beats the layout) and render it into a
+     * `floating_overlay` sentinel. The native floating-overlay host — registered
+     * on core's `NativeRootHostRegistry` from this plugin's init function —
+     * hoists it onto a top layer over the content.
+     *
+     * Discovery is via `method_exists`, so layouts/screens opt in by using the
+     * {@see \Nativephp\NativeUi\Concerns\HasFloatingOverlay} /
+     * {@see \Nativephp\NativeUi\Concerns\InteractsWithFloatingOverlay} traits (or
+     * by declaring the methods themselves) — core never knows.
+     */
+    protected function registerFloatingOverlay(): void
+    {
+        if (! class_exists(ChromeContributorRegistry::class)) {
+            return;
+        }
+
+        ChromeContributorRegistry::register(function (NativeComponent $screen, ?NativeLayout $layout, callable $renderPartial): ?Element {
+            if (method_exists($screen, 'hidesFloatingOverlay') && $screen->hidesFloatingOverlay()) {
+                return null;
+            }
+
+            $builder = null;
+            if (method_exists($screen, 'floatingOverlayOverride')) {
+                $builder = $screen->floatingOverlayOverride();
+            }
+            if ($builder === null && $layout !== null && method_exists($layout, 'floatingOverlay')) {
+                $builder = $layout->floatingOverlay($screen);
+            }
+
+            if (! $builder instanceof FloatingOverlayBuilder) {
+                return null;
+            }
+
+            $content = $builder->getContent();
+            $contentElement = $content instanceof View ? $renderPartial($content) : $content;
+
+            $overlay = FloatingOverlayElement::make();
+            $overlay->applyAttributes([
+                'alignment' => $builder->getAlignment(),
+                'offset' => $builder->getOffset(),
+            ]);
+            $overlay->addChild($contentElement);
+
+            return $overlay;
         });
     }
 }

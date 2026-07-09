@@ -10,6 +10,11 @@ func registerNativeUIChrome() {
         let drawerNode = root.children.first { $0.type == "native_drawer" }
         return AnyView(NativeDrawerHost(drawerNode: drawerNode) { content })
     }
+
+    NativeRootHostRegistry.shared.register("native-ui.floating-overlay", consumes: "floating_overlay") { root, content in
+        let overlayNode = root.children.first { $0.type == "floating_overlay" }
+        return AnyView(NativeFloatingOverlayHost(overlayNode: overlayNode) { content })
+    }
 }
 
 /// Global open/close state for the content-agnostic side drawer
