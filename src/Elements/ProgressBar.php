@@ -33,8 +33,10 @@ class ProgressBar extends Element
         if (! empty($attrs['indeterminate'])) {
             $this->indeterminate();
         }
-        if (isset($attrs['color']))      { $this->color((string) $attrs['color']); }
-        if (isset($attrs['trackColor'])) { $this->trackColor((string) $attrs['trackColor']); }
+        if (isset($attrs['color'])) { $this->color((string) $attrs['color']); }
+
+        $trackColor = $attrs['track-color'] ?? $attrs['trackColor'] ?? null;
+        if ($trackColor !== null) { $this->trackColor((string) $trackColor); }
 
         $this->applyA11yAttributes($attrs);
     }
