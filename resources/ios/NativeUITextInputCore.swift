@@ -61,9 +61,14 @@ struct NativeUITextInputCore: View {
                     .foregroundColor(contentColor)
                     .focused($isFocused)
             } else if multiline {
+                // A vertical-axis TextField reports a ~0 intrinsic width when
+                // empty and won't expand to fill an ancestor's `maxWidth:
+                // .infinity` the way a single-line field does — so without this
+                // explicit fill it collapses to its content (just the icon).
                 TextField(placeholder, text: $text, axis: .vertical)
                     .lineLimit(maxLines > 0 ? 1...maxLines : 1...5)
                     .foregroundColor(contentColor)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .focused($isFocused)
             } else {
                 TextField(placeholder, text: $text)
