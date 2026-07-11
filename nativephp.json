@@ -457,5 +457,8 @@
             "swift_packages": [],
             "pods": []
         }
+    },
+    "hooks": {
+        "copy_assets": "nativephp:native-ui:copy-fonts"
     }
 }

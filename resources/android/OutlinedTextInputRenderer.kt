@@ -19,7 +19,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUINode
 import com.nativephp.plugins.native_ui.NativeUITheme
@@ -90,6 +92,8 @@ object OutlinedTextInputRenderer {
             "lg" -> theme.fontLg
             else -> theme.fontMd
         }
+        val customFontFamily = if (props.fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, props.fontName) else null
+        val lineHeight = nuiLineHeightUnit(props.lineHeightPx, props.lineHeight, textSize.value)
 
         OutlinedTextField(
             value = text,
@@ -121,7 +125,7 @@ object OutlinedTextInputRenderer {
             visualTransformation = props.visualTransformation,
             keyboardOptions = keyboardOptionsFor(props),
             keyboardActions = KeyboardActions(onDone = { dispatcher.onSubmit(text) }),
-            textStyle = TextStyle(fontSize = textSize, color = theme.onSurface),
+            textStyle = TextStyle(fontSize = textSize, color = theme.onSurface, fontFamily = customFontFamily, lineHeight = lineHeight),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = theme.onSurface,
                 unfocusedTextColor = theme.onSurface,

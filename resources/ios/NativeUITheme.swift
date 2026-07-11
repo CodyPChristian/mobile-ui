@@ -174,24 +174,36 @@ struct NUIScaledFontModifier: ViewModifier {
     @ScaledMetric private var size: CGFloat
     private let weight: Font.Weight
     private let design: Font.Design
+    private let fontName: String?
 
-    init(size: CGFloat, weight: Font.Weight, design: Font.Design) {
+    init(size: CGFloat, weight: Font.Weight, design: Font.Design, fontName: String?) {
         _size = ScaledMetric(wrappedValue: size, relativeTo: .body)
         self.weight = weight
         self.design = design
+        self.fontName = fontName
     }
 
     func body(content: Content) -> some View {
-        content.font(.system(size: size, weight: weight, design: design))
+        // A resolvable custom font wins; the weight still applies (SwiftUI
+        // selects/synthesizes it within the family). Unknown names — or none —
+        // fall back to the system font unchanged. `size` is already Dynamic-
+        // Type-scaled by `@ScaledMetric`, so the custom font uses it as-is.
+        if let fontName, let custom = NativeUIFontResolver.font(fontName, size: size) {
+            content.font(custom.weight(weight))
+        } else {
+            content.font(.system(size: size, weight: weight, design: design))
+        }
     }
 }
 
 extension View {
     /// Dynamic-Type-aware replacement for `.font(.system(size:weight:design:))`.
     /// Use this for all text (and glyph icons rendered as text) so type scales
-    /// with the user's accessibility settings.
-    func nuiScaledFont(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default) -> some View {
-        modifier(NUIScaledFontModifier(size: size, weight: weight, design: design))
+    /// with the user's accessibility settings. Pass `fontName` (a bundled font
+    /// token) to render in a custom font, falling back to the system font when
+    /// it can't be resolved.
+    func nuiScaledFont(size: CGFloat, weight: Font.Weight = .regular, design: Font.Design = .default, fontName: String? = nil) -> some View {
+        modifier(NUIScaledFontModifier(size: size, weight: weight, design: design, fontName: fontName))
     }
 
     /// Ensures a minimum 44×44pt hit target (Apple HIG) without changing the

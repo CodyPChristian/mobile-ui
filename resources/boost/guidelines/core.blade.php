@@ -29,6 +29,35 @@ paths serialize to the same wire tree.
 </code-snippet>
 @endverbatim
 
+### Typography
+
+- **Custom fonts.** Drop `.ttf`/`.otf`/`.ttc` files into the app's
+  `resources/fonts/` and reference one by its filename (minus extension) with
+  the `font` attribute: `font="Inter-Bold"` for `resources/fonts/Inter-Bold.ttf`.
+  Works on `<native:text>`, `<native:button>`, and the text inputs; also fluent
+  as `->font('Inter-Bold')`. The build's `copy_assets` hook bundles the files
+  (iOS registers them by PostScript name, Android loads from `assets/fonts/`);
+  an unresolved name falls back to the system font. Font size/weight still come
+  from `text-*` / `font-*` classes and the theme.
+- **Line height (leading).** `leading-none|tight|snug|normal|relaxed|loose`
+  (unitless multipliers of the font size), plus arbitrary `leading-[1.4]`
+  (multiplier) and `leading-[24px]` (absolute). Applies to `<native:text>` and
+  the text inputs; button labels are single-line so it has no visible effect
+  there. Only affects multi-line text. iOS caveat: SwiftUI's `Text` only exposes
+  additive line spacing, so *increasing* leading (`relaxed`/`loose`, or a large
+  `leading-[…px]`) is exact, but tightening below the font's natural line height
+  (`none`/`tight`) is limited — measured against the actual font, so custom
+  fonts aren't over-spaced. Android is exact both ways.
+
+@verbatim
+<code-snippet name="Custom font + line height" lang="blade">
+<native:text font="Inter-Bold" class="text-2xl">Heading</native:text>
+<native:text class="text-base leading-relaxed">
+    A comfortably-spaced paragraph that wraps across several lines.
+</native:text>
+</code-snippet>
+@endverbatim
+
 ### Accessibility
 
 Screen-reader support rides on two props that every element accepts:

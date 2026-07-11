@@ -3,8 +3,10 @@ package com.nativephp.plugins.native_ui.ui
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import android.content.Context
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.SpanStyle
@@ -44,9 +46,12 @@ object TextRenderer {
         val fontSize = p.getFloat("font_size", 16f)
         val fontWeight = resolveFontWeight(p.getInt("font_weight"))
         val fontStyle = resolveFontStyle(p.getInt("font_style"))
-        val fontFamily = resolveFontFamily(p.getInt("font_family"))
+        val fontName = p.getString("font_name")
+        val customFamily = if (fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, fontName) else null
+        val fontFamily = customFamily ?: resolveFontFamily(p.getInt("font_family"))
         val textDecoration = resolveDecoration(p.getInt("underline"), p.getInt("line_through"))
         val letterSpacingEm = p.getFloat("letter_spacing", 0f)
+        val lineHeight = nuiLineHeightUnit(p.getFloat("line_height_px", 0f), p.getFloat("line_height", 0f), fontSize)
         val maxLines = p.getInt("max_lines")
         val textAlign = resolveTextAlign(p.getInt("text_align"))
 
@@ -74,6 +79,7 @@ object TextRenderer {
             // survive into the final TextStyle.
             style = TextStyle(
                 fontFamily = fontFamily,
+                lineHeight = lineHeight,
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
                 lineHeightStyle = LineHeightStyle(
                     alignment = LineHeightStyle.Alignment.Center,
@@ -88,9 +94,13 @@ object TextRenderer {
         val p = node.props
         val isDark = isSystemInDarkTheme()
         val maxLines = p.getInt("max_lines")
+        // Leading applies to the whole string; base the multiplier on the
+        // node's own font size (the root run's size).
+        val lineHeight = nuiLineHeightUnit(p.getFloat("line_height_px", 0f), p.getFloat("line_height", 0f), p.getFloat("font_size", 16f))
 
+        val ctx = LocalContext.current
         val annotated = buildAnnotatedString {
-            appendTextRuns(node, RunCtx.Root, isDark)
+            appendTextRuns(node, RunCtx.Root, isDark, ctx)
         }
 
         Text(
@@ -102,6 +112,7 @@ object TextRenderer {
             // Same font-padding / line-height trim as the leaf path so composed
             // and plain text share vertical metrics.
             style = TextStyle(
+                lineHeight = lineHeight,
                 platformStyle = PlatformTextStyle(includeFontPadding = false),
                 lineHeightStyle = LineHeightStyle(
                     alignment = LineHeightStyle.Alignment.Center,
@@ -123,6 +134,7 @@ private data class RunCtx(
     val fontSize: Float,
     val fontWeightInt: Int,
     val fontFamilyInt: Int,
+    val fontName: String,
     val colorArgb: Int,
     val darkColorArgb: Int,
     val italic: Boolean,
@@ -131,8 +143,8 @@ private data class RunCtx(
 ) {
     companion object {
         // Root defaults — mirror the leaf path (16sp, normal, black, no dark
-        // override, no decoration/letter-spacing/transform).
-        val Root = RunCtx(16f, 0, 0, 0xFF000000.toInt(), 0, false, 0f, 0)
+        // override, no custom font, no decoration/letter-spacing/transform).
+        val Root = RunCtx(16f, 0, 0, "", 0xFF000000.toInt(), 0, false, 0f, 0)
     }
 }
 
@@ -140,7 +152,7 @@ private data class RunCtx(
  * Walk a node, emitting one styled span for its own text (leaf, or the leading
  * text before nested runs) then recursing into text children.
  */
-private fun AnnotatedString.Builder.appendTextRuns(node: NativeUINode, inherited: RunCtx, isDark: Boolean) {
+private fun AnnotatedString.Builder.appendTextRuns(node: NativeUINode, inherited: RunCtx, isDark: Boolean, context: Context) {
     val p = node.props
 
     // Resolve this level's effective context: own props over inherited.
@@ -148,6 +160,7 @@ private fun AnnotatedString.Builder.appendTextRuns(node: NativeUINode, inherited
         fontSize = p.getFloat("font_size", inherited.fontSize),
         fontWeightInt = p.getInt("font_weight", inherited.fontWeightInt),
         fontFamilyInt = p.getInt("font_family", inherited.fontFamilyInt),
+        fontName = p.getString("font_name", inherited.fontName),
         colorArgb = p.getColor("color", inherited.colorArgb),
         darkColorArgb = p.getColor("dark_color", inherited.darkColorArgb),
         italic = p.getInt("font_style", if (inherited.italic) 1 else 0) == 1,
@@ -169,7 +182,8 @@ private fun AnnotatedString.Builder.appendTextRuns(node: NativeUINode, inherited
             fontSize = ctx.fontSize.sp,
             fontWeight = resolveFontWeight(ctx.fontWeightInt),
             fontStyle = if (ctx.italic) FontStyle.Italic else FontStyle.Normal,
-            fontFamily = resolveFontFamily(ctx.fontFamilyInt),
+            fontFamily = (if (ctx.fontName.isNotEmpty()) NativeUIFontResolver.resolve(context, ctx.fontName) else null)
+                ?: resolveFontFamily(ctx.fontFamilyInt),
             letterSpacing = if (ctx.letterSpacingEm != 0f) ctx.letterSpacingEm.em else TextUnit.Unspecified,
             textDecoration = resolveDecoration(p.getInt("underline"), p.getInt("line_through")),
             background = if (effectiveBg != 0) argbToComposeColor(effectiveBg) else Color.Unspecified,
@@ -178,7 +192,7 @@ private fun AnnotatedString.Builder.appendTextRuns(node: NativeUINode, inherited
     }
 
     node.children.filter { it.type == "text" }.forEach { child ->
-        appendTextRuns(child, ctx, isDark)
+        appendTextRuns(child, ctx, isDark, context)
     }
 }
 

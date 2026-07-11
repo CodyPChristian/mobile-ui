@@ -90,6 +90,13 @@ abstract class BaseTextInput extends Element
 
         // Size + a11y
         if (isset($attrs['size']))        { $this->size($attrs['size']); }
+        // Custom font by name — the token is a font file (minus extension)
+        // bundled from the app's resources/fonts/ by the copy_assets hook.
+        if (isset($attrs['font']))        { $this->font($attrs['font']); }
+        // Line height (leading) — meaningful for multiline inputs. `line_height`
+        // is a multiplier of font size; `line_height_px` an absolute override.
+        if (isset($attrs['lineHeight']))   { $this->inputProps['line_height'] = (float) $attrs['lineHeight']; }
+        if (isset($attrs['lineHeightPx'])) { $this->inputProps['line_height_px'] = (float) $attrs['lineHeightPx']; }
         $this->applyA11yAttributes($attrs);
 
         // Sync mode + debounce (from `native:model` expansion, or set manually).
@@ -273,6 +280,17 @@ abstract class BaseTextInput extends Element
     public function size(string $value): static
     {
         $this->inputProps['size'] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Render the typed text in a custom font. The name is a font file bundled
+     * from the app's resources/fonts/ (e.g. `Inter` for `Inter.ttf`).
+     */
+    public function font(string $name): static
+    {
+        $this->inputProps['font_name'] = $name;
 
         return $this;
     }

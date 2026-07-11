@@ -43,6 +43,13 @@ struct NativeUITextInputCore: View {
         let syncMode      = p.getString("sync_mode", default: "live")
         let debounceMs    = p.getInt("debounce_ms", default: 300)
         let keepFocus     = p.getBool("keep_focus_on_submit")
+        let fontName      = p.getString("font_name")
+        let lineSpacing   = NativeUIFontResolver.lineSpacing(
+            px: p.getFloat("line_height_px"),
+            mult: p.getFloat("line_height"),
+            fontSize: textSize,
+            fontName: fontName
+        )
 
         // Apply `.foregroundColor` (not just `.foregroundStyle`) so the TYPED
         // text adopts `contentColor`. SwiftUI's TextField/SecureField don't
@@ -64,7 +71,12 @@ struct NativeUITextInputCore: View {
                     .focused($isFocused)
             }
         }
-        .nuiScaledFont(size: textSize)
+        .nuiScaledFont(size: textSize, fontName: fontName.isEmpty ? nil : fontName)
+        // NOTE: SwiftUI's editable TextField ignores `.lineSpacing` for its
+        // typed text (unlike `Text`), so `leading-*` has no visible effect on
+        // iOS inputs. Kept for intent / forward-compat; leading works on
+        // `<native:text>` and on Android inputs.
+        .lineSpacing(lineSpacing)
         .tint(tintColor)
         .keyboardType(keyboard)
         .disabled(disabled || readOnly)

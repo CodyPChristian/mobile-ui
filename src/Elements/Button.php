@@ -75,6 +75,20 @@ class Button extends Element
         if (isset($attrs['icon-trailing']) || isset($attrs['iconTrailing'])) {
             $this->iconTrailing($attrs['icon-trailing'] ?? $attrs['iconTrailing']);
         }
+        // Custom font by name — the token is a font file (minus extension)
+        // bundled from the app's resources/fonts/ by the copy_assets hook.
+        if (isset($attrs['font'])) {
+            $this->font($attrs['font']);
+        }
+        // Line height (leading). `line_height` is a multiplier of font size;
+        // `line_height_px` an absolute override. Button labels are single-line,
+        // so this is accepted for parity but rarely has a visible effect.
+        if (isset($attrs['lineHeight'])) {
+            $this->buttonProps['line_height'] = (float) $attrs['lineHeight'];
+        }
+        if (isset($attrs['lineHeightPx'])) {
+            $this->buttonProps['line_height_px'] = (float) $attrs['lineHeightPx'];
+        }
         $this->applyA11yAttributes($attrs);
 
         // Optional tap-to-open dropdown menu — see Pressable.php for the
@@ -104,6 +118,17 @@ class Button extends Element
     public function size(string $value): static
     {
         $this->buttonProps['size'] = $value;
+
+        return $this;
+    }
+
+    /**
+     * Render the label in a custom font. The name is a font file bundled from
+     * the app's resources/fonts/ (e.g. `Inter-Bold` for `Inter-Bold.ttf`).
+     */
+    public function font(string $name): static
+    {
+        $this->buttonProps['font_name'] = $name;
 
         return $this;
     }

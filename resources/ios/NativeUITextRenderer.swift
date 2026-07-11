@@ -25,6 +25,7 @@ struct NativeUITextRenderer: View {
         let fontSize = p.getFloat("font_size", default: 16)
         let fontWeight = resolveFontWeight(p.getInt("font_weight"))
         let fontDesign = resolveFontDesign(p.getInt("font_family"))
+        let fontName = p.getString("font_name")
         let lightArgb = p.getColor("color", default: 0xFF000000)
         let darkArgb  = p.getColor("dark_color", default: 0)
         // Pick the dark hex when system is dark AND the theme class supplied
@@ -38,6 +39,12 @@ struct NativeUITextRenderer: View {
         let isUnderline = p.getInt("underline") == 1
         let isStrikethrough = p.getInt("line_through") == 1
         let letterSpacingEm = p.getFloat("letter_spacing", default: 0)
+        let lineSpacingValue = NativeUIFontResolver.lineSpacing(
+            px: p.getFloat("line_height_px", default: 0),
+            mult: p.getFloat("line_height", default: 0),
+            fontSize: CGFloat(fontSize),
+            fontName: fontName
+        )
 
         if !text.isEmpty {
             // Style the `Text` itself (italic/underline/strikethrough on Text are
@@ -58,7 +65,8 @@ struct NativeUITextRenderer: View {
             }()
 
             styledText
-                .nuiScaledFont(size: CGFloat(fontSize), weight: fontWeight, design: fontDesign)
+                .nuiScaledFont(size: CGFloat(fontSize), weight: fontWeight, design: fontDesign, fontName: fontName.isEmpty ? nil : fontName)
+                .lineSpacing(lineSpacingValue)
                 .foregroundColor(Color(argb: color))
                 .multilineTextAlignment(textAlign)
                 .lineLimit(maxLines > 0 ? maxLines : nil)
@@ -90,6 +98,7 @@ struct NativeUITextRenderer: View {
         var fontSize: Float
         var fontWeightInt: Int
         var fontFamilyInt: Int
+        var fontName: String
         var colorArgb: Int
         var darkColorArgb: Int
         var italic: Bool
@@ -97,9 +106,9 @@ struct NativeUITextRenderer: View {
         var textTransform: Int
 
         /// Root defaults — mirror the leaf path (16pt, regular, black, no dark
-        /// override, no decoration/kerning/transform).
+        /// override, no custom font, no decoration/kerning/transform).
         static let root = RunContext(
-            fontSize: 16, fontWeightInt: 0, fontFamilyInt: 0,
+            fontSize: 16, fontWeightInt: 0, fontFamilyInt: 0, fontName: "",
             colorArgb: 0xFF000000, darkColorArgb: 0, italic: false,
             letterSpacingEm: 0, textTransform: 0
         )
@@ -110,8 +119,17 @@ struct NativeUITextRenderer: View {
         let p = node.props
         let maxLines = p.getInt("max_lines")
         let composed = buildComposed()
+        // Leading applies uniformly to the whole composed string; base it on
+        // the node's own font size (the root run's size).
+        let lineSpacingValue = NativeUIFontResolver.lineSpacing(
+            px: p.getFloat("line_height_px", default: 0),
+            mult: p.getFloat("line_height", default: 0),
+            fontSize: CGFloat(p.getFloat("font_size", default: 16)),
+            fontName: p.getString("font_name")
+        )
 
         Text(composed)
+            .lineSpacing(lineSpacingValue)
             .multilineTextAlignment(resolveTextAlign(p.getInt("text_align")))
             .lineLimit(maxLines > 0 ? maxLines : nil)
             .modifier(TruncateIfLimited(maxLines: maxLines))
@@ -140,6 +158,7 @@ struct NativeUITextRenderer: View {
         ctx.fontSize = p.getFloat("font_size", default: inherited.fontSize)
         ctx.fontWeightInt = p.getInt("font_weight", default: inherited.fontWeightInt)
         ctx.fontFamilyInt = p.getInt("font_family", default: inherited.fontFamilyInt)
+        ctx.fontName = p.getString("font_name", default: inherited.fontName)
         ctx.colorArgb = p.getColor("color", default: inherited.colorArgb)
         ctx.darkColorArgb = p.getColor("dark_color", default: inherited.darkColorArgb)
         ctx.italic = p.getInt("font_style", default: inherited.italic ? 1 : 0) == 1
@@ -158,11 +177,18 @@ struct NativeUITextRenderer: View {
     private func makeRun(_ text: String, node: NativeUINode, ctx: RunContext) -> AttributedString {
         var run = AttributedString(applyTransform(text, ctx.textTransform))
 
-        var font = Font.system(
-            size: CGFloat(ctx.fontSize),
-            weight: resolveFontWeight(ctx.fontWeightInt),
-            design: resolveFontDesign(ctx.fontFamilyInt)
-        )
+        let runWeight = resolveFontWeight(ctx.fontWeightInt)
+        var font: Font
+        if !ctx.fontName.isEmpty,
+           let custom = NativeUIFontResolver.font(ctx.fontName, size: CGFloat(ctx.fontSize)) {
+            font = custom.weight(runWeight)
+        } else {
+            font = Font.system(
+                size: CGFloat(ctx.fontSize),
+                weight: runWeight,
+                design: resolveFontDesign(ctx.fontFamilyInt)
+            )
+        }
         if ctx.italic, #available(iOS 16.0, *) { font = font.italic() }
         run.font = font
 

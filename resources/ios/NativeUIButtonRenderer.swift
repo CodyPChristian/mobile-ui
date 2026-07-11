@@ -85,6 +85,14 @@ struct NativeUIButtonRenderer: View {
         // changing icon size off the text scale would surprise users.
         let classFontSize = CGFloat(p.getFloat("font_size"))
         let textSize = classFontSize > 0 ? classFontSize : metrics.textSize
+        let fontName = p.getString("font_name")
+        // Leading — button labels are single-line, so this is usually a no-op.
+        let lineSpacing = NativeUIFontResolver.lineSpacing(
+            px: p.getFloat("line_height_px"),
+            mult: p.getFloat("line_height"),
+            fontSize: textSize,
+            fontName: fontName
+        )
 
         let action = {
             if pressCb != 0 {
@@ -98,7 +106,9 @@ struct NativeUIButtonRenderer: View {
             iconTrailing: iconTrailing,
             loading: loading,
             iconSize: metrics.iconSize,
-            textSize: textSize
+            textSize: textSize,
+            fontName: fontName.isEmpty ? nil : fontName,
+            lineSpacing: lineSpacing
         )
         // `.fillWidthIfRequested(node)` is applied INSIDE the Button's
         // label closure at each variant call site below. SwiftUI's
@@ -337,6 +347,8 @@ private struct ButtonContent: View {
     let loading: Bool
     let iconSize: CGFloat
     let textSize: CGFloat
+    var fontName: String? = nil
+    var lineSpacing: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 8) {
@@ -344,7 +356,7 @@ private struct ButtonContent: View {
                 ProgressView()
                     .controlSize(.small)
                 if !label.isEmpty {
-                    Text(label).nuiScaledFont(size: textSize, weight: .medium)
+                    Text(label).nuiScaledFont(size: textSize, weight: .medium, fontName: fontName).lineSpacing(lineSpacing)
                 }
             } else {
                 if !icon.isEmpty {
@@ -352,7 +364,7 @@ private struct ButtonContent: View {
                         .nuiScaledFont(size: iconSize)
                 }
                 if !label.isEmpty {
-                    Text(label).nuiScaledFont(size: textSize, weight: .medium)
+                    Text(label).nuiScaledFont(size: textSize, weight: .medium, fontName: fontName).lineSpacing(lineSpacing)
                 }
                 if !iconTrailing.isEmpty {
                     Image(systemName: getIconForName(iconTrailing))

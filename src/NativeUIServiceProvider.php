@@ -11,6 +11,7 @@ use Native\Mobile\Edge\NativeComponent;
 use Native\Mobile\Edge\TailwindParser;
 use Nativephp\NativeUi\Builders\Drawer;
 use Nativephp\NativeUi\Builders\FloatingOverlay as FloatingOverlayBuilder;
+use Nativephp\NativeUi\Console\CopyFontsCommand;
 use Nativephp\NativeUi\Console\GenerateIconsCommand;
 use Nativephp\NativeUi\Elements\FloatingOverlay as FloatingOverlayElement;
 use Nativephp\NativeUi\Elements\NativeDrawer;
@@ -70,6 +71,7 @@ class NativeUIServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 GenerateIconsCommand::class,
+                CopyFontsCommand::class,
             ]);
         }
     }

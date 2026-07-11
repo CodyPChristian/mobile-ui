@@ -20,8 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -60,6 +62,8 @@ object ButtonRenderer {
         val a11yHint = p.getString("a11y_hint")
         val pressCb = p.getCallbackId("on_press").let { if (it != 0) it else node.onPress }
         val hasMenu = p.getBool("has_menu")
+        val fontName = p.getString("font_name")
+        val customFontFamily = if (fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, fontName) else null
 
         // Read the active token set from the shared store. Using the singleton
         // rather than a CompositionLocal because nothing in the render tree
@@ -67,6 +71,8 @@ object ButtonRenderer {
         // Compose recomposes automatically when PHP pushes a theme update.
         val theme = if (isSystemInDarkTheme()) NativeUITheme.dark else NativeUITheme.light
         val metrics = sizeMetrics(size, theme)
+        // Leading — button labels are single-line, so this is usually a no-op.
+        val lineHeight = nuiLineHeightUnit(p.getFloat("line_height_px", 0f), p.getFloat("line_height", 0f), metrics.textSize.value)
 
         // When `:menu` is set, tap toggles the dropdown anchored to the
         // button. The PHP-side @press handler is shadowed (menu wins).
@@ -94,6 +100,8 @@ object ButtonRenderer {
                 loading = loading,
                 iconSize = metrics.iconSize,
                 textSize = metrics.textSize,
+                fontFamily = customFontFamily,
+                lineHeight = lineHeight,
             )
         }
 
@@ -220,6 +228,8 @@ object ButtonRenderer {
         loading: Boolean,
         iconSize: Dp,
         textSize: TextUnit,
+        fontFamily: FontFamily? = null,
+        lineHeight: TextUnit = TextUnit.Unspecified,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -232,7 +242,7 @@ object ButtonRenderer {
                     color = LocalContentColor.current,
                 )
                 if (label.isNotEmpty()) {
-                    Text(text = label, fontSize = textSize, maxLines = 1, softWrap = false)
+                    Text(text = label, fontSize = textSize, fontFamily = fontFamily, lineHeight = lineHeight, maxLines = 1, softWrap = false)
                 }
                 return@Row
             }
@@ -252,7 +262,7 @@ object ButtonRenderer {
                 // width, producing fragments like "Destruct\nive". With them,
                 // the button claims its full content width and flex-wrap kicks
                 // the whole button to the next row.
-                Text(text = label, fontSize = textSize, maxLines = 1, softWrap = false)
+                Text(text = label, fontSize = textSize, fontFamily = fontFamily, lineHeight = lineHeight, maxLines = 1, softWrap = false)
             }
             if (iconTrailing.isNotEmpty()) {
                 MaterialIcon(
