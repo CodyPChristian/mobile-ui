@@ -83,11 +83,13 @@ class Button extends Element
         // Line height (leading). `line_height` is a multiplier of font size;
         // `line_height_px` an absolute override. Button labels are single-line,
         // so this is accepted for parity but rarely has a visible effect.
-        if (isset($attrs['lineHeight'])) {
-            $this->buttonProps['line_height'] = (float) $attrs['lineHeight'];
+        $lineHeight = $attrs['line-height'] ?? $attrs['lineHeight'] ?? null;
+        if ($lineHeight !== null) {
+            $this->buttonProps['line_height'] = (float) $lineHeight;
         }
-        if (isset($attrs['lineHeightPx'])) {
-            $this->buttonProps['line_height_px'] = (float) $attrs['lineHeightPx'];
+        $lineHeightPx = $attrs['line-height-px'] ?? $attrs['lineHeightPx'] ?? null;
+        if ($lineHeightPx !== null) {
+            $this->buttonProps['line_height_px'] = (float) $lineHeightPx;
         }
         $this->applyA11yAttributes($attrs);
 
