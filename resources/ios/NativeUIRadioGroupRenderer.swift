@@ -87,7 +87,7 @@ struct NativeUIRadioRenderer: View {
                     .nuiScaledFont(size: 22)
                     .foregroundColor(isSelected ? theme.primary : theme.onSurfaceVariant)
                 if !label.isEmpty {
-                    Text(label).foregroundColor(theme.onSurface)
+                    Text(label).nuiScaledFont(size: 17).foregroundColor(theme.onSurface)
                 }
             }
             .nuiMinTapTarget()

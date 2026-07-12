@@ -4,7 +4,9 @@ import SwiftUI
 ///
 /// Maps semantic `variant` prop to the matching SwiftUI button style:
 ///   - primary     → `.buttonStyle(.borderedProminent)` + `.tint(theme.primary)`
-///   - secondary   → `.buttonStyle(.bordered)` + `.tint(theme.secondary)`
+///   - secondary   → `.buttonStyle(.borderedProminent)` + `.tint(theme.secondary)`
+///     (solid, like primary — for a tonal look set opacity on the token in
+///     the theme config, e.g. `'secondary' => 'fuchsia-500/70'`)
 ///   - destructive → `.buttonStyle(.borderedProminent)` + `.tint(theme.destructive)`
 ///   - accent      → `.buttonStyle(.borderedProminent)` + `.tint(theme.accent)`
 ///   - ghost       → `.buttonStyle(.plain)` + `.foregroundStyle(theme.primary)`
@@ -108,7 +110,8 @@ struct NativeUIButtonRenderer: View {
             iconSize: metrics.iconSize,
             textSize: textSize,
             fontName: fontName.isEmpty ? nil : fontName,
-            lineSpacing: lineSpacing
+            lineSpacing: lineSpacing,
+            spinnerColor: theme.onSurfaceVariant
         )
         // `.fillWidthIfRequested(node)` is applied INSIDE the Button's
         // label closure at each variant call site below. SwiftUI's
@@ -241,12 +244,21 @@ struct NativeUIButtonRenderer: View {
         a11yLabel: String,
         a11yHint: String
     ) -> some View {
+        // Disabled state (all variants): `surface-variant` fill +
+        // `on-surface-variant` label from the theme. Explicit tints and
+        // `.foregroundStyle` persist through `.disabled()` — the system
+        // only dims, which left e.g. a white label on a pale fill. Android
+        // uses the same token pair, so disabled looks identical there.
         switch variant {
         case "secondary":
+            // Solid fill of the secondary token, same treatment as primary.
+            // No renderer-imposed alpha: transparency belongs to the theme
+            // config (e.g. `'secondary' => 'fuchsia-500/70'`). `.bordered`
+            // would render the tint at ~15% opacity and lose the label.
             Button(action: action) { content.fillWidthIfRequested(node) }
-                .buttonStyle(.bordered)
-                .tint(theme.secondary)
-                .foregroundStyle(theme.onSecondary)
+                .buttonStyle(.borderedProminent)
+                .tint(enabled ? theme.secondary : theme.surfaceVariant)
+                .foregroundStyle(enabled ? theme.onSecondary : theme.onSurfaceVariant)
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -258,8 +270,8 @@ struct NativeUIButtonRenderer: View {
             // color rather than the theme's destructive token.
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.borderedProminent)
-                .tint(theme.destructive)
-                .foregroundStyle(theme.onDestructive)
+                .tint(enabled ? theme.destructive : theme.surfaceVariant)
+                .foregroundStyle(enabled ? theme.onDestructive : theme.onSurfaceVariant)
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -268,7 +280,7 @@ struct NativeUIButtonRenderer: View {
         case "ghost":
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.plain)
-                .foregroundStyle(theme.primary)
+                .foregroundStyle(enabled ? theme.primary : theme.onSurfaceVariant)
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -277,8 +289,8 @@ struct NativeUIButtonRenderer: View {
         case "accent":
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.borderedProminent)
-                .tint(theme.accent)
-                .foregroundStyle(theme.onAccent)
+                .tint(enabled ? theme.accent : theme.surfaceVariant)
+                .foregroundStyle(enabled ? theme.onAccent : theme.onSurfaceVariant)
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -287,8 +299,8 @@ struct NativeUIButtonRenderer: View {
         default: // "primary" and any unknown value
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.borderedProminent)
-                .tint(theme.primary)
-                .foregroundStyle(theme.onPrimary)
+                .tint(enabled ? theme.primary : theme.surfaceVariant)
+                .foregroundStyle(enabled ? theme.onPrimary : theme.onSurfaceVariant)
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -349,12 +361,18 @@ private struct ButtonContent: View {
     let textSize: CGFloat
     var fontName: String? = nil
     var lineSpacing: CGFloat = 0
+    var spinnerColor: Color? = nil
 
     var body: some View {
         HStack(spacing: 8) {
             if loading {
+                // Explicit tint: the spinner follows the Button's tint by
+                // default, which in the loading (= disabled) state is the
+                // pale surface-variant fill — invisible against itself.
+                // Matches Android, where the spinner uses the content color.
                 ProgressView()
                     .controlSize(.small)
+                    .tint(spinnerColor)
                 if !label.isEmpty {
                     Text(label).nuiScaledFont(size: textSize, weight: .medium, fontName: fontName).lineSpacing(lineSpacing)
                 }

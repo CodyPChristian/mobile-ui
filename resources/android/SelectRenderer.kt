@@ -66,8 +66,8 @@ object SelectRenderer {
                 onValueChange = {},
                 readOnly = true,
                 enabled = !disabled,
-                label = if (label.isNotEmpty()) ({ Text(label) }) else null,
-                placeholder = if (placeholder.isNotEmpty()) ({ Text(placeholder) }) else null,
+                label = if (label.isNotEmpty()) ({ Text(label, fontFamily = nuiDefaultFontFamily()) }) else null,
+                placeholder = if (placeholder.isNotEmpty()) ({ Text(placeholder, fontFamily = nuiDefaultFontFamily()) }) else null,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 textStyle = TextStyle(color = theme.onSurface),
@@ -91,7 +91,7 @@ object SelectRenderer {
             ) {
                 options.forEach { option ->
                     DropdownMenuItem(
-                        text = { Text(option, color = theme.onSurface) },
+                        text = { Text(option, fontFamily = nuiDefaultFontFamily(), color = theme.onSurface) },
                         onClick = {
                             selectedValue = option
                             lastSentValue = option

@@ -76,7 +76,7 @@ object TabRowRenderer {
                         modifier = if (tabA11y.isNotEmpty()) {
                             Modifier.semantics { contentDescription = tabA11y }
                         } else Modifier,
-                        text = if (tabLabel.isNotEmpty()) ({ Text(tabLabel) }) else null,
+                        text = if (tabLabel.isNotEmpty()) ({ Text(tabLabel, fontFamily = nuiDefaultFontFamily()) }) else null,
                         icon = if (tabIcon.isNotEmpty()) {
                             { MaterialIcon(name = tabIcon, contentDescription = null, size = 24.dp) }
                         } else null,

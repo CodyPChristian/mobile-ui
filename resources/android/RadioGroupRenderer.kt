@@ -51,7 +51,7 @@ object RadioGroupRenderer {
 
         Column(modifier = groupModifier) {
             if (label.isNotEmpty()) {
-                Text(text = label, color = theme.onSurfaceVariant)
+                Text(text = label, fontFamily = nuiDefaultFontFamily(), color = theme.onSurfaceVariant)
                 Spacer(Modifier.height(8.dp))
             }
             node.children.forEach { child ->

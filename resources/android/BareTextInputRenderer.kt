@@ -43,7 +43,8 @@ object BareTextInputRenderer {
         val props = parseTextInputProps(node)
         val isDark = isSystemInDarkTheme()
         val theme = if (isDark) NativeUITheme.dark else NativeUITheme.light
-        val customFontFamily = if (props.fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, props.fontName) else null
+        val customFontFamily = (if (props.fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, props.fontName) else null)
+            ?: nuiThemeDefaultFontFamily(LocalContext.current)
         val lineHeight = nuiLineHeightUnit(props.lineHeightPx, props.lineHeight, props.textSize.toFloat())
 
         // Per-instance color override. `color` is the light value;

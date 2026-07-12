@@ -71,9 +71,9 @@ struct NativeUIListRenderer: View {
                                     }
                             }
                         } header: {
-                            if !header.isEmpty { Text(header) }
+                            if !header.isEmpty { Text(header).nuiScaledFont(size: 13) }
                         } footer: {
-                            if !footer.isEmpty { Text(footer) }
+                            if !footer.isEmpty { Text(footer).nuiScaledFont(size: 13) }
                         }
                     } else {
                         rowView(child, separator: separator)

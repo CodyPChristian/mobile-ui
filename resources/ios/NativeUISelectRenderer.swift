@@ -46,6 +46,7 @@ struct NativeUISelectRenderer: View {
             } label: {
                 HStack {
                     Text(selected.isEmpty ? placeholder : selected)
+                        .nuiScaledFont(size: 17)
                         .foregroundStyle(selected.isEmpty ? theme.onSurfaceVariant : theme.onSurface)
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")

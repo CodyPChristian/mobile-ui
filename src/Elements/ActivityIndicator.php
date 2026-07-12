@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\ResolvesColorValues;
 
 /**
  * Circular activity indicator (spinner). Always indeterminate — use
@@ -14,6 +15,7 @@ use Native\Mobile\Edge\Element;
  */
 class ActivityIndicator extends Element
 {
+    use ResolvesColorValues;
 
     protected string $type = 'activity_indicator';
 
@@ -41,7 +43,7 @@ class ActivityIndicator extends Element
      */
     public function color(string $hex): static
     {
-        $this->indicatorProps['color'] = $hex;
+        $this->indicatorProps['color'] = $this->resolveColorValue($hex);
 
         return $this;
     }

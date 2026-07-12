@@ -95,8 +95,10 @@ abstract class BaseTextInput extends Element
         if (isset($attrs['font']))        { $this->font($attrs['font']); }
         // Line height (leading) — meaningful for multiline inputs. `line_height`
         // is a multiplier of font size; `line_height_px` an absolute override.
-        if (isset($attrs['lineHeight']))   { $this->inputProps['line_height'] = (float) $attrs['lineHeight']; }
-        if (isset($attrs['lineHeightPx'])) { $this->inputProps['line_height_px'] = (float) $attrs['lineHeightPx']; }
+        $lineHeight = $attrs['line-height'] ?? $attrs['lineHeight'] ?? null;
+        if ($lineHeight !== null)   { $this->inputProps['line_height'] = (float) $lineHeight; }
+        $lineHeightPx = $attrs['line-height-px'] ?? $attrs['lineHeightPx'] ?? null;
+        if ($lineHeightPx !== null) { $this->inputProps['line_height_px'] = (float) $lineHeightPx; }
         $this->applyA11yAttributes($attrs);
 
         // Sync mode + debounce (from `native:model` expansion, or set manually).

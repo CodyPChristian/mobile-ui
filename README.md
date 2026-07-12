@@ -32,6 +32,36 @@ public function handleNativeUICompleted($result, $id = null)
 }
 ```
 
+## Theming & Colors
+
+Theme tokens live in `config/native-ui.php` (publish with
+`php artisan vendor:publish --tag=native-ui-config`). Every authored color —
+theme tokens, element color props, and arbitrary-value classes — accepts the
+same grammar:
+
+```php
+'light' => [
+    'primary'   => 'violet-600',      // Tailwind palette name
+    'secondary' => 'fuchsia-500/70',  // opacity modifier → tonal fill
+    'surface'   => '#F8FAFC',         // plain hex (#RGB / #RRGGBB)
+    'accent'    => '#00AAA680',       // CSS alpha hex (#RRGGBBAA)
+],
+```
+
+Alpha hex is authored in CSS `#RRGGBBAA` order; the framework converts to the
+native wire format. Dark mode is auto-derived from `light` (alpha preserved)
+unless a `dark` block overrides specific tokens.
+
+Disabled controls draw from the `surface-variant` (fill) and
+`on-surface-variant` (label) tokens on both platforms — adjust those two
+tokens to tune disabled contrast app-wide.
+
+Icons accept platform enum overrides in Blade, matching the fluent API:
+
+```blade
+<native:icon :ios="Ios::House" :android="Android::Home" :size="24" />
+```
+
 ## Accessibility
 
 Every element accepts a screen-reader label and an optional hint, via Blade

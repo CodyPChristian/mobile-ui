@@ -210,23 +210,23 @@ internal class TextInputDispatcher(
 /** Common slot renderers — shared between OutlinedTextField and TextField. */
 @Composable
 internal fun labelSlot(text: String): (@Composable () -> Unit)? =
-    if (text.isEmpty()) null else ({ Text(text) })
+    if (text.isEmpty()) null else ({ Text(text, fontFamily = nuiDefaultFontFamily()) })
 
 @Composable
 internal fun placeholderSlot(text: String): (@Composable () -> Unit)? =
-    if (text.isEmpty()) null else ({ Text(text) })
+    if (text.isEmpty()) null else ({ Text(text, fontFamily = nuiDefaultFontFamily()) })
 
 @Composable
 internal fun supportingSlot(text: String): (@Composable () -> Unit)? =
-    if (text.isEmpty()) null else ({ Text(text) })
+    if (text.isEmpty()) null else ({ Text(text, fontFamily = nuiDefaultFontFamily()) })
 
 @Composable
 internal fun prefixSlot(text: String): (@Composable () -> Unit)? =
-    if (text.isEmpty()) null else ({ Text(text) })
+    if (text.isEmpty()) null else ({ Text(text, fontFamily = nuiDefaultFontFamily()) })
 
 @Composable
 internal fun suffixSlot(text: String): (@Composable () -> Unit)? =
-    if (text.isEmpty()) null else ({ Text(text) })
+    if (text.isEmpty()) null else ({ Text(text, fontFamily = nuiDefaultFontFamily()) })
 
 @Composable
 internal fun leadingIconSlot(name: String): (@Composable () -> Unit)? =

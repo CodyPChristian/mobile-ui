@@ -86,7 +86,7 @@ object ToggleRenderer {
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(text = label, modifier = Modifier.weight(1f), color = theme.onSurface)
+                Text(text = label, fontFamily = nuiDefaultFontFamily(), modifier = Modifier.weight(1f), color = theme.onSurface)
                 Spacer(modifier = Modifier.width(8.dp))
                 Switch(
                     checked = checked,

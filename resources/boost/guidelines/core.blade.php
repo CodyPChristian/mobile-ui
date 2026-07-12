@@ -29,6 +29,42 @@ paths serialize to the same wire tree.
 </code-snippet>
 @endverbatim
 
+### Theming & colors
+
+- Everywhere a color is authored — theme tokens in `config/native-ui.php`,
+  element color props (`->color()`, `headline-color`, badge `color`, swipe
+  `tint`), and arbitrary-value classes (`bg-[#…]`) — the same grammar applies:
+  - Tailwind palette names: `red-300`, `orange-800`
+  - Special names: `white`, `black`, `transparent`
+  - CSS hex: `#F00`, `#B91C1C`, and with alpha `#8B5CF680` (#RRGGBBAA order)
+  - Opacity modifiers on any of the above: `red-300/20`, `#8B5CF6/50`
+- Alpha-bearing hex is always authored in CSS `#RRGGBBAA` order; PHP converts
+  to the native wire order — never hand-author Android-style `#AARRGGBB`.
+- Dark mode: theme tokens carry a `dark` block (auto-derived when omitted),
+  and `bg-theme-*` / `text-theme-*` / `border-theme-*` classes emit both
+  modes automatically. This works for Blade-declared AND programmatically
+  built elements (`Element->class()`).
+- Disabled controls use the `surface-variant` (fill) + `on-surface-variant`
+  (label) tokens on both platforms — tune disabled contrast by adjusting
+  those two tokens, not per-component.
+- Buttons render their variant token solid; for a softer tonal fill set
+  opacity on the token itself (e.g. `'secondary' => 'fuchsia-500/70'`).
+- `<native:icon>` accepts platform enum overrides as attributes —
+  `:ios="Ios::House"` / `:android="Android::Home"` — matching the
+  programmatic `Icon::make(ios: …, android: …)`.
+
+@verbatim
+<code-snippet name="Theme tokens accept the full color grammar" lang="php">
+// config/native-ui.php
+'light' => [
+    'primary'   => 'violet-600',      // tailwind palette name
+    'secondary' => 'fuchsia-500/70',  // with opacity → tonal fills
+    'surface'   => '#F8FAFC',         // plain hex
+    'accent'    => '#00AAA680',       // CSS alpha hex (#RRGGBBAA)
+],
+</code-snippet>
+@endverbatim
+
 ### Typography
 
 - **Custom fonts.** Drop `.ttf`/`.otf`/`.ttc` files into the app's
@@ -39,6 +75,13 @@ paths serialize to the same wire tree.
   (iOS registers them by PostScript name, Android loads from `assets/fonts/`);
   an unresolved name falls back to the system font. Font size/weight still come
   from `text-*` / `font-*` classes and the theme.
+- **Downloading fonts.** `php artisan native:font Lobster` (or `"Rock Salt"`,
+  multiple families, `--weights=400,700`, `--italic`) downloads Google Fonts
+  into `resources/fonts/` with ready-to-use token names — no API key.
+- **App-wide default font.** Set the theme's `font-family` token in
+  `config/native-ui.php` to a bundled token (e.g. `'Inter-Regular'`) to apply
+  it everywhere; per-element `font` attributes and `font-serif`/`font-mono`
+  classes still win. `native:font --default` sets it for you.
 - **Line height (leading).** `leading-none|tight|snug|normal|relaxed|loose`
   (unitless multipliers of the font size), plus arbitrary `leading-[1.4]`
   (multiplier) and `leading-[24px]` (absolute). Applies to `<native:text>` and

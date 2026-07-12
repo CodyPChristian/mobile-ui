@@ -76,7 +76,7 @@ object ButtonGroupRenderer {
                     selected = index == selectedIndex,
                     enabled = !disabled,
                     colors = colors,
-                    label = { Text(label) },
+                    label = { Text(label, fontFamily = nuiDefaultFontFamily()) },
                 )
             }
         }

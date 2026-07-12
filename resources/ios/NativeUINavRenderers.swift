@@ -17,6 +17,9 @@ struct NativeUITopBarRenderer: View {
         let backgroundColor: Color = bgColorArgb != 0 ? Color(argb: bgColorArgb) : .clear
         let elevation = CGFloat(props.getFloat("elevation"))
         let showBack = props.getBool("show_navigation_icon")
+        // Per-bar font (font_name prop) — nil falls through to the theme
+        // default inside nuiScaledFont.
+        let barFont = props.getString("font_name")
 
         HStack(spacing: 8) {
             // Leading: back button (system back, not a press callback —
@@ -37,11 +40,11 @@ struct NativeUITopBarRenderer: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.headline)
+                    .nuiScaledFont(size: 17, weight: .semibold, fontName: barFont.isEmpty ? nil : barFont)
                     .foregroundColor(textColor)
                 if !subtitle.isEmpty {
                     Text(subtitle)
-                        .font(.caption)
+                        .nuiScaledFont(size: 12, fontName: barFont.isEmpty ? nil : barFont)
                         .foregroundColor(textColor.opacity(0.7))
                 }
             }
@@ -114,6 +117,9 @@ struct NativeUIBottomNavRenderer: View {
         // when each item's label text is shown.
         let activeArgb = node.props.getColor("active_color", default: 0)
         let activeColor: Color = activeArgb != 0 ? Color(argb: activeArgb) : .accentColor
+        // Per-bar font (font_name prop) — nil falls through to the theme
+        // default inside nuiScaledFont.
+        let barFont = node.props.getString("font_name")
         let isDark = node.props.getBool("dark")
         // Explicit `textColor()` from the TabBar builder wins for inactive
         // items; falls back to the gray defaults picked by `dark()`.
@@ -180,7 +186,7 @@ struct NativeUIBottomNavRenderer: View {
                         }
                         if showLabel && !label.isEmpty {
                             Text(label)
-                                .font(.caption2)
+                                .nuiScaledFont(size: 11, fontName: barFont.isEmpty ? nil : barFont)
                         }
                     }
                     .foregroundColor(active ? activeColor : inactiveColor)

@@ -54,6 +54,7 @@ object BadgeRenderer {
         Box(modifier = boxModifier, contentAlignment = Alignment.Center) {
             Text(
                 text = text,
+                fontFamily = nuiDefaultFontFamily(),
                 color = fg,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,

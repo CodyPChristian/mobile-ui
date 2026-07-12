@@ -83,7 +83,8 @@ object FilledTextInputRenderer {
             "lg" -> theme.fontLg
             else -> theme.fontMd
         }
-        val customFontFamily = if (props.fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, props.fontName) else null
+        val customFontFamily = (if (props.fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, props.fontName) else null)
+            ?: nuiThemeDefaultFontFamily(LocalContext.current)
         val lineHeight = nuiLineHeightUnit(props.lineHeightPx, props.lineHeight, textSize.value)
 
         TextField(

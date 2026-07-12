@@ -8,9 +8,11 @@ use Native\Mobile\Edge\Layouts\Builders\NavAction;
 use Native\Mobile\Icon\AndroidSymbol;
 use Native\Mobile\Icon\IconResolver;
 use Native\Mobile\Icon\IosSymbol;
+use Nativephp\NativeUi\Concerns\ResolvesColorValues;
 
 class ListItem extends Element
 {
+    use ResolvesColorValues;
 
     protected string $type = 'list_item';
 
@@ -309,7 +311,7 @@ class ListItem extends Element
         $this->listItemProps['leading_type'] = 'monogram';
         $this->listItemProps['leading_value'] = substr($initials, 0, 2);
         if ($color !== null) {
-            $this->listItemProps['leading_monogram_color'] = $color;
+            $this->listItemProps['leading_monogram_color'] = $this->resolveColorValue($color);
         }
 
         return $this;
@@ -330,7 +332,7 @@ class ListItem extends Element
      */
     public function leadingIconBackgroundColor(string $color): static
     {
-        $this->listItemProps['leading_icon_bg_color'] = $color;
+        $this->listItemProps['leading_icon_bg_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
@@ -453,49 +455,49 @@ class ListItem extends Element
 
     public function headlineColor(string $color): static
     {
-        $this->listItemProps['headline_color'] = $color;
+        $this->listItemProps['headline_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function supportingColor(string $color): static
     {
-        $this->listItemProps['supporting_color'] = $color;
+        $this->listItemProps['supporting_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function overlineColor(string $color): static
     {
-        $this->listItemProps['overline_color'] = $color;
+        $this->listItemProps['overline_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function containerColor(string $color): static
     {
-        $this->listItemProps['container_color'] = $color;
+        $this->listItemProps['container_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function leadingIconColor(string $color): static
     {
-        $this->listItemProps['leading_icon_color'] = $color;
+        $this->listItemProps['leading_icon_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function trailingIconColor(string $color): static
     {
-        $this->listItemProps['trailing_icon_color'] = $color;
+        $this->listItemProps['trailing_icon_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function trailingTextColor(string $color): static
     {
-        $this->listItemProps['trailing_text_color'] = $color;
+        $this->listItemProps['trailing_text_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
@@ -576,10 +578,11 @@ class ListItem extends Element
             if (empty($resolved['icon'])) {
                 continue;
             }
+            $color = $badge['color'] ?? '';
             $out[] = [
                 'icon' => $resolved['icon'],
                 'icon_variant' => $resolved['variant'] ?? '',
-                'color' => $badge['color'] ?? '',
+                'color' => $color === '' ? '' : $this->resolveColorValue($color),
             ];
         }
 
@@ -615,12 +618,13 @@ class ListItem extends Element
                 $action['android'] ?? null,
             );
 
+            $tint = $action['tint'] ?? '';
             $out[] = [
                 'cb' => $registry->register($action['method']),
                 'label' => $action['label'] ?? '',
                 'icon' => $resolved['icon'] ?? '',
                 'icon_variant' => $resolved['variant'] ?? '',
-                'tint' => $action['tint'] ?? '',
+                'tint' => $tint === '' ? '' : $this->resolveColorValue($tint),
                 'role' => $action['role'] ?? '',
             ];
         }
