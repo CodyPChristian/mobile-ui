@@ -67,18 +67,20 @@ object GestureAreaRenderer {
         val onSwipe = node.props.getInt("on_swipe", 0)
         val swipeFingers = node.props.getInt("swipe-fingers", 1)
 
-        // Seed during COMPOSITION (remember runs inline, keyed on the id)
-        // rather than in a LaunchedEffect: effects run after children have
+        // Seed during COMPOSITION (inline, before children compose) rather
+        // than in a LaunchedEffect: effects run after children have
         // composed, and a child's `evaluate()` read materializes the store
         // entry — which would turn a post-composition seed into a no-op.
-        // Keying on the id also re-seeds when a PHP re-render mints a new
-        // SharedValue for the same node (e.g. the @pinchEnd roundtrip).
-        remember(panYId) {
-            if (panYId != 0) SharedValueStore.seed(panYId, panYInitial)
-        }
-        remember(pinchId) {
-            if (pinchId != 0) SharedValueStore.seed(pinchId, pinchInitial)
-        }
+        //
+        // Two distinct re-publish situations to handle:
+        //  1. PHP minted a NEW SharedValue id (fresh `SharedValue::make`
+        //     each render) — seed the unknown id.
+        //  2. Same id, but the initial CHANGED — PHP called `setValue()`
+        //     on a persistent SharedValue. That is an explicit
+        //     write-back: push it into the store even though the id
+        //     already has a live value (a reset button, snap-to, etc.).
+        SyncBinding(panYId, panYInitial)
+        SyncBinding(pinchId, pinchInitial)
 
         Box(
             modifier = modifier
@@ -187,5 +189,30 @@ object GestureAreaRenderer {
                 NodeView(node = child)
             }
         }
+    }
+
+    /**
+     * Keep a SharedValue binding in sync with what PHP published, during
+     * composition. Unknown id → seed (don't stomp a live gesture value);
+     * known id with a changed initial → PHP `setValue()` write-back.
+     *
+     * The holder is a plain object (not MutableState) — it's a memo of
+     * the last-synced pair, not something composition should observe.
+     */
+    @Composable
+    private fun SyncBinding(id: Int, initial: Float) {
+        if (id == 0) return
+        val holder = remember { BindingHolder() }
+        val prev = holder.pair
+        if (prev?.first != id) {
+            SharedValueStore.seed(id, initial)
+        } else if (prev.second != initial) {
+            SharedValueStore.set(id, initial)
+        }
+        holder.pair = id to initial
+    }
+
+    private class BindingHolder {
+        var pair: Pair<Int, Float>? = null
     }
 }

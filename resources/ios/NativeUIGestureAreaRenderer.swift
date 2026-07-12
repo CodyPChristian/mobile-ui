@@ -97,18 +97,31 @@ struct NativeUIGestureAreaRenderer: View {
             seedPan(panYId, initial: panYInitial)
             seedPinch(pinchId, initial: pinchInitial)
         }
-        // A PHP re-render can mint a NEW SharedValue id while this view
-        // stays alive (onAppear won't re-fire) — e.g. the @pinchEnd
-        // roundtrip publishing a tree whose pinch value is re-seeded
-        // from the final scale. Re-seed the store and reset the gesture
-        // anchors whenever the bound id changes, so the next gesture
-        // continues from the initial PHP just published instead of
-        // reading 0 from an unseeded id.
+        // Two distinct re-publish situations to handle while this view
+        // stays alive (onAppear won't re-fire):
+        //
+        //  1. PHP minted a NEW SharedValue id (fresh `SharedValue::make`
+        //     each render) — seed the unknown id so the next gesture
+        //     continues from the initial PHP published, not from 0.
+        //  2. Same id, but `pinch-initial` / `pan-y-initial` CHANGED —
+        //     PHP called `setValue()` on a persistent SharedValue. That
+        //     is an explicit write-back: push it into the store even
+        //     though the id already has a live value (a reset button,
+        //     a snap-to-position, etc.).
         .onChange(of: panYId) { _, newId in
             seedPan(newId, initial: panYInitial)
         }
         .onChange(of: pinchId) { _, newId in
             seedPinch(newId, initial: pinchInitial)
+        }
+        .onChange(of: panYInitial) { _, newInitial in
+            guard panYId != 0 else { return }
+            store.set(newInitial, for: panYId)
+            dragStart = newInitial
+        }
+        .onChange(of: pinchInitial) { _, newInitial in
+            guard pinchId != 0 else { return }
+            store.set(newInitial, for: pinchId)
         }
         .modifier(A11yLabelModifier(label: a11yLabel))
         .modifier(A11yHintModifier(hint: a11yHint))
