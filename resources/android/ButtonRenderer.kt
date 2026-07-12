@@ -112,19 +112,23 @@ object ButtonRenderer {
         // inside a Box (with DropdownMenu) when `:menu` is attached.
         val buttonByVariant: @Composable () -> Unit = {
             when (variant) {
+                // Disabled state (all variants): `surface-variant` fill +
+                // `on-surface-variant` label from the theme, replacing M3's
+                // default onSurface-at-38% which read too faint. iOS uses the
+                // same token pair, so disabled looks identical cross-platform.
                 "secondary" -> FilledTonalButton(
                     onClick = onClick,
                     enabled = enabled,
                     modifier = buttonModifier,
                     contentPadding = metrics.contentPadding,
-                    // Colors come from the theme config (native-ui.php), matching
-                    // iOS which uses `theme.secondary` + `theme.onSecondary`. The
-                    // tonal alpha softens the fill a touch vs a fully-saturated
-                    // solid (what read as "too saturated") while staying dark
-                    // enough for the `onSecondary` label to read.
+                    // Solid fill of the secondary token, matching iOS. No
+                    // renderer-imposed alpha: transparency belongs to the
+                    // theme config (e.g. `'secondary' => 'fuchsia-500/70'`).
                     colors = ButtonDefaults.filledTonalButtonColors(
-                        containerColor = theme.secondary.copy(alpha = 0.7f),
+                        containerColor = theme.secondary,
                         contentColor = theme.onSecondary,
+                        disabledContainerColor = theme.surfaceVariant,
+                        disabledContentColor = theme.onSurfaceVariant,
                     ),
                     content = { content() },
                 )
@@ -137,6 +141,8 @@ object ButtonRenderer {
                     colors = ButtonDefaults.buttonColors(
                         containerColor = theme.destructive,
                         contentColor = theme.onDestructive,
+                        disabledContainerColor = theme.surfaceVariant,
+                        disabledContentColor = theme.onSurfaceVariant,
                     ),
                     content = { content() },
                 )
@@ -146,7 +152,10 @@ object ButtonRenderer {
                     enabled = enabled,
                     modifier = buttonModifier,
                     contentPadding = metrics.contentPadding,
-                    colors = ButtonDefaults.textButtonColors(contentColor = theme.primary),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = theme.primary,
+                        disabledContentColor = theme.onSurfaceVariant,
+                    ),
                     content = { content() },
                 )
 
@@ -159,6 +168,8 @@ object ButtonRenderer {
                     colors = ButtonDefaults.buttonColors(
                         containerColor = theme.primary,
                         contentColor = theme.onPrimary,
+                        disabledContainerColor = theme.surfaceVariant,
+                        disabledContentColor = theme.onSurfaceVariant,
                     ),
                     content = { content() },
                 )
