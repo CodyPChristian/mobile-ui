@@ -75,6 +75,18 @@ struct NativeUIScrollViewRenderer: View {
                             Color.clear
                                 .frame(height: 1)
                                 .id(Self.bottomAnchorID)
+                                // Re-pin when the anchor itself materializes.
+                                // The outer onAppear's one-runloop defer can
+                                // still beat the lazy content's first layout
+                                // when this scroll-view is embedded in another
+                                // scrolling container (e.g. the Jump docs
+                                // reader) — this fires after the anchor has
+                                // real geometry, so the pin always lands.
+                                .onAppear {
+                                    DispatchQueue.main.async {
+                                        proxy.scrollTo(Self.bottomAnchorID, anchor: .bottom)
+                                    }
+                                }
                         }
                     }
                     .frame(maxWidth: .infinity)
