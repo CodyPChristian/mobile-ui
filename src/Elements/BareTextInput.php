@@ -2,6 +2,8 @@
 
 namespace Nativephp\NativeUi\Elements;
 
+use Nativephp\NativeUi\Concerns\ResolvesColorValues;
+
 /**
  * Chromeless text input — a SwiftUI `TextField` (iOS) / Compose
  * `BasicTextField` (Android) with no outline, no label, no fill, no
@@ -19,6 +21,8 @@ namespace Nativephp\NativeUi\Elements;
  */
 class BareTextInput extends BaseTextInput
 {
+    use ResolvesColorValues;
+
     protected string $type = 'bare_text_input';
 
     /**
@@ -53,7 +57,7 @@ class BareTextInput extends BaseTextInput
         // collector's `buildDarkProps` automatically maps `dark.color`
         // to `dark_color` for free — `class="text-slate-700 dark:text-slate-300"`
         // gives a working light/dark pair without any custom plumbing.
-        $this->inputProps['color'] = $color;
+        $this->inputProps['color'] = $this->resolveColorValue($color);
 
         return $this;
     }

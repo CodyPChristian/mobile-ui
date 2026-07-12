@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Elements;
 
 use Native\Mobile\Edge\CallbackRegistry;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\ResolvesColorValues;
 
 /**
  * Linear progress bar. Value in [0.0, 1.0]. Omit `value` for indeterminate
@@ -14,6 +15,7 @@ use Native\Mobile\Edge\Element;
  */
 class ProgressBar extends Element
 {
+    use ResolvesColorValues;
 
     protected string $type = 'progress_bar';
 
@@ -48,14 +50,14 @@ class ProgressBar extends Element
      */
     public function color(string $hex): static
     {
-        $this->progressBarProps['color'] = $hex;
+        $this->progressBarProps['color'] = $this->resolveColorValue($hex);
 
         return $this;
     }
 
     public function trackColor(string $hex): static
     {
-        $this->progressBarProps['track_color'] = $hex;
+        $this->progressBarProps['track_color'] = $this->resolveColorValue($hex);
 
         return $this;
     }

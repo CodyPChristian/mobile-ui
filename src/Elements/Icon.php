@@ -7,9 +7,11 @@ use Native\Mobile\Edge\Element;
 use Native\Mobile\Icon\AndroidSymbol;
 use Native\Mobile\Icon\IconResolver;
 use Native\Mobile\Icon\IosSymbol;
+use Nativephp\NativeUi\Concerns\ResolvesColorValues;
 
 class Icon extends Element
 {
+    use ResolvesColorValues;
 
     protected string $type = 'icon';
 
@@ -35,6 +37,14 @@ class Icon extends Element
         if (isset($attrs['name']))  { $this->name($attrs['name']); }
         if (isset($attrs['size']))  { $this->size((float) $attrs['size']); }
         if (isset($attrs['color'])) { $this->color($attrs['color']); }
+
+        // Platform enum overrides — `<icon :ios="Ios::House" :android="Android::Home"/>`
+        // — same shape as the programmatic `Icon::make(ios: …, android: …)`.
+        $ios = $attrs['ios'] ?? null;
+        $android = $attrs['android'] ?? null;
+        if ($ios !== null || $android !== null) {
+            $this->name(ios: $ios, android: $android);
+        }
 
         // Optional dark-mode override hex. Renderers pick this when the
         // system colorScheme is dark; otherwise they use `color`.
@@ -77,14 +87,14 @@ class Icon extends Element
 
     public function color(string $color): static
     {
-        $this->iconProps['color'] = $color;
+        $this->iconProps['color'] = $this->resolveColorValue($color);
 
         return $this;
     }
 
     public function darkColor(string $color): static
     {
-        $this->iconProps['dark_color'] = $color;
+        $this->iconProps['dark_color'] = $this->resolveColorValue($color);
 
         return $this;
     }
