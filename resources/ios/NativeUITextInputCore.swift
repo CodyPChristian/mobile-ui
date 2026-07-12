@@ -35,6 +35,7 @@ struct NativeUITextInputCore: View {
         let multiline     = p.getBool("multiline")
         let maxLength     = p.getInt("max_length")
         let maxLines      = p.getInt("max_lines")
+        let minLines      = p.getInt("min_lines")
         let disabled      = p.getBool("disabled")
         let readOnly      = p.getBool("read_only")
         let keyboard      = resolveKeyboardType(p.getString("keyboard"))
@@ -65,8 +66,13 @@ struct NativeUITextInputCore: View {
                 // empty and won't expand to fill an ancestor's `maxWidth:
                 // .infinity` the way a single-line field does — so without this
                 // explicit fill it collapses to its content (just the icon).
+                // `min-lines` reserves visible height up front (a textarea
+                // that LOOKS like a textarea before you type); `max-lines`
+                // caps growth. Clamp so a min above the max still renders.
+                let lower = max(minLines, 1)
+                let upper = maxLines > 0 ? max(maxLines, lower) : max(5, lower)
                 TextField(placeholder, text: $text, axis: .vertical)
-                    .lineLimit(maxLines > 0 ? 1...maxLines : 1...5)
+                    .lineLimit(lower...upper)
                     .foregroundColor(contentColor)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .focused($isFocused)
