@@ -40,6 +40,12 @@ struct NativeUIStackLayout: Layout {
         for (i, subview) in subviews.enumerated() {
             let isScrollView = i < childNodes.count && childNodes[i].type == "scroll_view"
             if isScrollView { continue }
+            // Absolute children overlay the stack (badges, corner chips) —
+            // they must not inflate its size, same as FlexContainer keeping
+            // them out of the flow measurement.
+            let isAbsolute = i < childNodes.count
+                && childNodes[i].layout?.positionType == PositionType.absolute
+            if isAbsolute { continue }
 
             let size = subview.sizeThatFits(.unspecified)
             maxSize.width = max(maxSize.width, size.width)
@@ -65,6 +71,32 @@ struct NativeUIStackLayout: Layout {
             let natural = subview.sizeThatFits(.unspecified)
             let width = widthFill ? bounds.width : natural.width
             let height = heightFill ? bounds.height : natural.height
+
+            // Absolute children pin to the stack's edges by inset — the
+            // docs-blessed "layer a badge over an icon" pattern. Same anchor
+            // convention as FlexContainer.placeAbsolute: a positive right /
+            // bottom inset (with zero left/top) anchors to that edge.
+            if layout?.positionType == PositionType.absolute {
+                let top = CGFloat(layout?.positionTop ?? 0)
+                let right = CGFloat(layout?.positionRight ?? 0)
+                let bottom = CGFloat(layout?.positionBottom ?? 0)
+                let left = CGFloat(layout?.positionLeft ?? 0)
+
+                var x = bounds.minX + left
+                if right > 0 && left == 0 {
+                    x = bounds.maxX - width - right
+                }
+                var y = bounds.minY + top
+                if bottom > 0 && top == 0 {
+                    y = bounds.maxY - height - bottom
+                }
+
+                subview.place(
+                    at: CGPoint(x: x, y: y),
+                    proposal: ProposedViewSize(width: width, height: height)
+                )
+                continue
+            }
 
             let x = bounds.minX + (bounds.width - width) / 2
             let y = bounds.minY + (bounds.height - height) / 2

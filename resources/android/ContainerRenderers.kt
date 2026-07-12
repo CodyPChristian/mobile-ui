@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -74,6 +75,27 @@ object StackRenderer {
                     if (layout.heightMode == SizeMode.FILL) childMod = childMod.fillMaxHeight()
                     if (layout.widthMode == SizeMode.FIXED && layout.width > 0f) childMod = childMod.width(layout.width.dp)
                     if (layout.heightMode == SizeMode.FIXED && layout.height > 0f) childMod = childMod.height(layout.height.dp)
+
+                    // Absolute children pin to the stack's edges by inset —
+                    // the docs-blessed "layer a badge over an icon" pattern.
+                    // Same anchor convention as ComposeFlexLayout / the iOS
+                    // FlexContainer: a positive right/bottom inset anchors to
+                    // that edge; otherwise offset from top-left.
+                    if (layout.positionType == PositionType.ABSOLUTE) {
+                        val left = layout.positionLeft
+                        val top = layout.positionTop
+                        val right = layout.positionRight
+                        val bottom = layout.positionBottom
+                        val anchor = when {
+                            right > 0f && bottom > 0f -> Alignment.BottomEnd
+                            right > 0f                -> Alignment.TopEnd
+                            bottom > 0f               -> Alignment.BottomStart
+                            else                      -> Alignment.TopStart
+                        }
+                        val offsetX = if (right > 0f) (-right).dp else left.dp
+                        val offsetY = if (bottom > 0f) (-bottom).dp else top.dp
+                        childMod = childMod.align(anchor).offset(x = offsetX, y = offsetY)
+                    }
                 }
                 NodeView(node = child, overrideModifier = childMod)
             }
