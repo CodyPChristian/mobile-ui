@@ -2,6 +2,8 @@
 
 namespace Nativephp\NativeUi;
 
+use Native\Mobile\Edge\TailwindParser;
+
 /**
  * Native UI — Theme token storage.
  *
@@ -25,7 +27,7 @@ class Theme
      */
     public static function load(array $tokens): void
     {
-        static::$tokens = $tokens;
+        static::$tokens = static::normalizeColors($tokens);
         static::pushToNative();
     }
 
@@ -35,7 +37,7 @@ class Theme
      */
     public static function merge(array $tokens): void
     {
-        static::$tokens = static::deepMerge(static::$tokens, $tokens);
+        static::$tokens = static::deepMerge(static::$tokens, static::normalizeColors($tokens));
         static::pushToNative();
     }
 
@@ -112,6 +114,38 @@ class Theme
 
     // ─── Internals ────────────────────────────────────────────────────────────
 
+    /**
+     * Resolve authored color tokens in the `light` / `dark` blocks to
+     * wire-format hex. Accepts Tailwind palette names (`red-300`), opacity
+     * modifiers (`red-300/20`, `#8B5CF6/50`), and CSS hex with alpha
+     * (`#8B5CF680`) — see TailwindParser::resolveColorValue for the full
+     * grammar. Unrecognized strings pass through untouched.
+     *
+     * Only the two color blocks are touched; radii, font sizes, and
+     * `font-family` never enter the resolver. method_exists guards against
+     * a core version that predates the shared resolver.
+     */
+    private static function normalizeColors(array $tokens): array
+    {
+        if (! method_exists(TailwindParser::class, 'resolveColorValue')) {
+            return $tokens;
+        }
+
+        foreach (['light', 'dark'] as $mode) {
+            if (! isset($tokens[$mode]) || ! is_array($tokens[$mode])) {
+                continue;
+            }
+            foreach ($tokens[$mode] as $key => $value) {
+                if (! is_string($value)) {
+                    continue;
+                }
+                $tokens[$mode][$key] = TailwindParser::resolveColorValue($value) ?? $value;
+            }
+        }
+
+        return $tokens;
+    }
+
     private static function deepMerge(array $base, array $overlay): array
     {
         foreach ($overlay as $key => $value) {
@@ -126,14 +160,22 @@ class Theme
     }
 
     /**
-     * Invert lightness (HSL) of a #RRGGBB color. Preserves hue and saturation
-     * so brand colors remain recognizable in dark mode.
+     * Invert lightness (HSL) of a #RRGGBB or #AARRGGBB color. Preserves hue
+     * and saturation so brand colors remain recognizable in dark mode; a
+     * leading alpha byte (wire format) is carried over unchanged.
      */
     private static function invertLuminance(string $hex): string
     {
         $hex = ltrim($hex, '#');
+
+        $alpha = '';
+        if (strlen($hex) === 8) {
+            $alpha = strtoupper(substr($hex, 0, 2));
+            $hex = substr($hex, 2);
+        }
+
         if (strlen($hex) !== 6) {
-            return '#'.$hex;
+            return '#'.$alpha.$hex;
         }
 
         $r = hexdec(substr($hex, 0, 2)) / 255.0;
@@ -147,7 +189,8 @@ class Theme
         [$r2, $g2, $b2] = static::hslToRgb($h, $s, $l);
 
         return sprintf(
-            '#%02X%02X%02X',
+            '#%s%02X%02X%02X',
+            $alpha,
             (int) round($r2 * 255),
             (int) round($g2 * 255),
             (int) round($b2 * 255)

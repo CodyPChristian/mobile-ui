@@ -24,6 +24,11 @@ return [
     | "on-X" means "color of content placed ON a surface of color X"
     |   — i.e., text/icons on that background.
     |
+    | Color tokens accept:
+    |   - CSS hex: '#B91C1C', '#F00', or with alpha '#8B5CF680' (#RRGGBBAA)
+    |   - Tailwind palette names: 'red-300', 'orange-800'
+    |   - Opacity modifiers on either: 'red-300/20', '#8B5CF6/50'
+    |
     | Dark mode is auto-derived from `light` when `dark` is not set. To opt
     | into explicit dark tokens, fill out the `dark` block.
     |
