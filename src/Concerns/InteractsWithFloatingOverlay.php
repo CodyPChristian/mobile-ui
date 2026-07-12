@@ -26,7 +26,10 @@ use Nativephp\NativeUi\Builders\FloatingOverlay;
  *
  * Mirrors how {@see InteractsWithDrawer} overrides the layout drawer. The
  * native-ui chrome contributor checks these (via `method_exists`) before
- * falling back to the layout.
+ * falling back to the layout. A bare `protected bool $hidesFloatingOverlay
+ * = true;` property WITHOUT this trait also works — the contributor falls
+ * back to reading the property directly, matching core's `$hidesTabBar` /
+ * `$hidesNavBar` shorthand.
  */
 trait InteractsWithFloatingOverlay
 {

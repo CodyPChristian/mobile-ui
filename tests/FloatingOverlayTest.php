@@ -1,9 +1,12 @@
 <?php
 
 use Native\Mobile\Edge\CallbackRegistry;
+use Native\Mobile\Edge\NativeComponent;
 use Nativephp\NativeUi\Builders\FloatingOverlay as FloatingOverlayBuilder;
+use Nativephp\NativeUi\Concerns\InteractsWithFloatingOverlay;
 use Nativephp\NativeUi\Elements\Chip;
 use Nativephp\NativeUi\Elements\FloatingOverlay;
+use Nativephp\NativeUi\NativeUIServiceProvider;
 
 /**
  * The floating-overlay layout hook: a content-agnostic pill/banner that floats
@@ -55,4 +58,40 @@ it('clamps an unknown alignment to bottom', function () {
     $props = $overlay->toArray(new CallbackRegistry)['props'];
 
     expect($props['alignment'])->toBe('bottom');
+});
+
+/**
+ * The contributor's per-screen opt-out accepts BOTH spellings: the
+ * InteractsWithFloatingOverlay trait (method form) and a bare
+ * `protected bool $hidesFloatingOverlay = true;` property — the latter
+ * matching core's `$hidesTabBar` / `$hidesNavBar` shorthand.
+ */
+it('reads the opt-out flag from the trait method form', function () {
+    $screen = new class extends NativeComponent
+    {
+        use InteractsWithFloatingOverlay;
+
+        public function __construct()
+        {
+            $this->hidesFloatingOverlay = true;
+        }
+    };
+
+    expect(NativeUIServiceProvider::screenHides($screen, 'hidesFloatingOverlay'))->toBeTrue();
+});
+
+it('reads the opt-out flag from a bare property without the trait', function () {
+    $screen = new class extends NativeComponent
+    {
+        protected bool $hidesFloatingOverlay = true;
+    };
+
+    expect(NativeUIServiceProvider::screenHides($screen, 'hidesFloatingOverlay'))->toBeTrue();
+});
+
+it('defaults the opt-out flag to false when the screen declares neither', function () {
+    $screen = new class extends NativeComponent {};
+
+    expect(NativeUIServiceProvider::screenHides($screen, 'hidesFloatingOverlay'))->toBeFalse();
+    expect(NativeUIServiceProvider::screenHides($screen, 'hidesDrawer'))->toBeFalse();
 });

@@ -22,7 +22,9 @@ use Nativephp\NativeUi\Builders\Drawer;
  *
  * Mirrors how `navigationOptions()` overrides the layout nav bar. The native-ui
  * chrome contributor checks these (via `method_exists`) before falling back to
- * the layout.
+ * the layout. A bare `protected bool $hidesDrawer = true;` property WITHOUT
+ * this trait also works — the contributor falls back to reading the property
+ * directly, matching core's `$hidesTabBar` / `$hidesNavBar` shorthand.
  */
 trait InteractsWithDrawer
 {

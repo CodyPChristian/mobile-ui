@@ -97,7 +97,7 @@ class NativeUIServiceProvider extends ServiceProvider
         }
 
         ChromeContributorRegistry::register(function (NativeComponent $screen, ?NativeLayout $layout, callable $renderPartial): ?Element {
-            if (method_exists($screen, 'hidesDrawer') && $screen->hidesDrawer()) {
+            if (self::screenHides($screen, 'hidesDrawer')) {
                 return null;
             }
 
@@ -147,7 +147,7 @@ class NativeUIServiceProvider extends ServiceProvider
         }
 
         ChromeContributorRegistry::register(function (NativeComponent $screen, ?NativeLayout $layout, callable $renderPartial): ?Element {
-            if (method_exists($screen, 'hidesFloatingOverlay') && $screen->hidesFloatingOverlay()) {
+            if (self::screenHides($screen, 'hidesFloatingOverlay')) {
                 return null;
             }
 
@@ -175,5 +175,29 @@ class NativeUIServiceProvider extends ServiceProvider
 
             return $overlay;
         });
+    }
+
+    /**
+     * Read a screen's boolean opt-out flag in either spelling: the trait /
+     * method form (`hidesFloatingOverlay(): bool`) or a bare property
+     * (`protected bool $hidesFloatingOverlay = true;`). The bare property
+     * matches core's `$hidesTabBar` / `$hidesNavBar` shorthand, so screens
+     * can use the same one-liner for plugin chrome without pulling in the
+     * trait. The method wins when both exist (it IS the trait's property
+     * accessor in the common case).
+     */
+    public static function screenHides(NativeComponent $screen, string $flag): bool
+    {
+        if (method_exists($screen, $flag)) {
+            return (bool) $screen->{$flag}();
+        }
+
+        if (property_exists($screen, $flag)) {
+            $prop = new \ReflectionProperty($screen, $flag);
+
+            return $prop->isInitialized($screen) && (bool) $prop->getValue($screen);
+        }
+
+        return false;
     }
 }
