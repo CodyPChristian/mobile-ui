@@ -115,6 +115,7 @@ object ListItemRenderer {
             headlineContent = {
                 Text(
                     text = headline,
+                    fontFamily = nuiDefaultFontFamily(),
                     color = if (headlineColor != 0) Color(headlineColor) else Color.Unspecified
                 )
             },
@@ -123,6 +124,7 @@ object ListItemRenderer {
                 {
                     Text(
                         text = overline,
+                        fontFamily = nuiDefaultFontFamily(),
                         color = if (overlineColor != 0) Color(overlineColor) else Color.Unspecified
                     )
                 }
@@ -131,6 +133,7 @@ object ListItemRenderer {
                 {
                     Text(
                         text = supporting,
+                        fontFamily = nuiDefaultFontFamily(),
                         color = if (supportingColor != 0) Color(supportingColor) else Color.Unspecified
                     )
                 }
@@ -260,6 +263,7 @@ object ListItemRenderer {
                     ) {
                         Text(
                             text = effectiveValue.take(2).uppercase(),
+                            fontFamily = nuiDefaultFontFamily(),
                             color = textColor,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
@@ -398,6 +402,7 @@ object ListItemRenderer {
                 "text" -> {
                     Text(
                         text = effectiveValue,
+                        fontFamily = nuiDefaultFontFamily(),
                         color = if (textColor != 0) Color(textColor) else Color.Unspecified
                     )
                 }

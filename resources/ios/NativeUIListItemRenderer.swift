@@ -67,15 +67,15 @@ struct NativeUIListItemRenderer: View {
             VStack(alignment: .leading, spacing: 2) {
                 if !overline.isEmpty {
                     Text(overline)
-                        .font(.caption)
+                        .nuiScaledFont(size: 12)
                         .foregroundColor(overlineColor != 0 ? Color(argb: overlineColor) : .secondary)
                 }
                 Text(headline)
-                    .font(.body)
+                    .nuiScaledFont(size: 17)
                     .foregroundColor(headlineColor != 0 ? Color(argb: headlineColor) : .primary)
                 if !supporting.isEmpty {
                     Text(supporting)
-                        .font(.subheadline)
+                        .nuiScaledFont(size: 15)
                         .foregroundColor(supportingColor != 0 ? Color(argb: supportingColor) : .secondary)
                 }
             }
@@ -194,6 +194,7 @@ struct NativeUIListItemRenderer: View {
                 .foregroundColor(iconColor != 0 ? Color(argb: iconColor) : .secondary)
         case "text":
             Text(value)
+                .nuiScaledFont(size: 17)
                 .foregroundColor(textColor != 0 ? Color(argb: textColor) : .secondary)
         case "icon_button":
             // Spoken name for the icon-only trailing button: explicit

@@ -75,7 +75,7 @@ object RadioRenderer {
                 colors = colors,
             )
             if (label.isNotEmpty()) {
-                Text(text = label, color = theme.onSurface)
+                Text(text = label, fontFamily = nuiDefaultFontFamily(), color = theme.onSurface)
             }
         }
     }

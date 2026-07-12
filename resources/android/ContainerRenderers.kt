@@ -189,6 +189,7 @@ internal fun renderAttachedMenuItem(item: NativeUINode, onSelected: () -> Unit) 
         }
         Text(
             itemLabel,
+            fontFamily = nuiDefaultFontFamily(),
             color = labelColor,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),

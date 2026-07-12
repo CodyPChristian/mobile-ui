@@ -103,9 +103,9 @@ object TopBarRenderer {
             }
             // Title + optional subtitle stacked
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = title, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
+                Text(text = title, fontFamily = nuiNodeFontFamily(node.props.getString("font_name")), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = textColor)
                 if (subtitle.isNotEmpty()) {
-                    Text(text = subtitle, fontSize = 12.sp, color = textColor.copy(alpha = 0.7f))
+                    Text(text = subtitle, fontFamily = nuiNodeFontFamily(node.props.getString("font_name")), fontSize = 12.sp, color = textColor.copy(alpha = 0.7f))
                 }
             }
             val actions = node.children.filter { it.type == "top_bar_action" }
@@ -227,6 +227,7 @@ object BottomNavRenderer {
                             ) {
                                 Text(
                                     text = badge,
+                                    fontFamily = nuiNodeFontFamily(node.props.getString("font_name")),
                                     fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White,
@@ -245,7 +246,7 @@ object BottomNavRenderer {
                         }
                     }
                     if (showLabel && label.isNotEmpty()) {
-                        Text(text = label, fontSize = 12.sp, color = itemColor, textAlign = TextAlign.Center)
+                        Text(text = label, fontFamily = nuiNodeFontFamily(node.props.getString("font_name")), fontSize = 12.sp, color = itemColor, textAlign = TextAlign.Center)
                     }
                 }
             }

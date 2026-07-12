@@ -4,6 +4,7 @@ struct NativeUITextRenderer: View {
     let node: NativeUINode
 
     @Environment(\.colorScheme) private var colorScheme
+    @ObservedObject private var themeStore = NativeUITheme.shared
 
     var body: some View {
         // A text node with child text runs composes them into ONE wrapping
@@ -178,9 +179,18 @@ struct NativeUITextRenderer: View {
         var run = AttributedString(applyTransform(text, ctx.textTransform))
 
         let runWeight = resolveFontWeight(ctx.fontWeightInt)
+        // Explicit run font first, then the app-wide theme default (only for
+        // the default design — font-serif/font-mono win over the default),
+        // then the system font. Mirrors NUIScaledFontModifier's resolution.
+        var runFontName = ctx.fontName
+        if runFontName.isEmpty, ctx.fontFamilyInt == 0 {
+            let family = themeStore.resolve(for: colorScheme).fontFamily
+            if !family.isEmpty, family != "System" { runFontName = family }
+        }
+
         var font: Font
-        if !ctx.fontName.isEmpty,
-           let custom = NativeUIFontResolver.font(ctx.fontName, size: CGFloat(ctx.fontSize)) {
+        if !runFontName.isEmpty,
+           let custom = NativeUIFontResolver.font(runFontName, size: CGFloat(ctx.fontSize)) {
             font = custom.weight(runWeight)
         } else {
             font = Font.system(

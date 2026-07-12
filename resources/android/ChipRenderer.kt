@@ -75,7 +75,7 @@ object ChipRenderer {
                     NativeUIBridge.sendToggleChangeEvent(onChangeCb, node.id, new)
                 }
             },
-            label = { Text(label) },
+            label = { Text(label, fontFamily = nuiDefaultFontFamily()) },
             modifier = chipModifier,
             enabled = !disabled,
             leadingIcon = if (iconName.isNotEmpty()) {

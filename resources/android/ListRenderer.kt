@@ -211,6 +211,7 @@ private fun SectionHeader(text: String) {
     ) {
         Text(
             text = text.uppercase(),
+            fontFamily = nuiDefaultFontFamily(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
@@ -263,6 +264,7 @@ private fun SectionFooter(text: String, grouped: Boolean) {
     ) {
         Text(
             text = text,
+            fontFamily = nuiDefaultFontFamily(),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontSize = 12.sp,
         )
@@ -445,6 +447,7 @@ private fun SwipeActionButton(
             if (action.label.isNotEmpty()) {
                 Text(
                     text = action.label,
+                    fontFamily = nuiDefaultFontFamily(),
                     color = Color.White,
                     fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
                     fontSize = 12.sp,

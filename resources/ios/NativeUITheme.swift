@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Theme Tokens
 
@@ -131,6 +132,32 @@ final class NativeUITheme: ObservableObject {
         // assignment on actual change to keep the observable stable.
         if newLight != self.light { self.light = newLight }
         if newDark  != self.dark  { self.dark  = newDark }
+
+        applyChromeFont(fontFamily)
+    }
+
+    /// Font the SYSTEM-drawn navigation chrome. `navigationTitle` renders
+    /// through UIKit's `UINavigationBar` and SwiftUI exposes no font API for
+    /// it, so route the app-wide default font through the UIKit appearance
+    /// proxy. Core doesn't configure `UINavigationBar` appearances itself, so
+    /// this composes safely; bars pick it up on creation (theme lands at boot,
+    /// before the first screen). Tab-bar labels are excluded — core's tabs
+    /// renderer manages its own `UITabBarAppearance`.
+    private func applyChromeFont(_ family: String) {
+        if family.isEmpty || family == "System" {
+            UINavigationBar.appearance().titleTextAttributes = nil
+            UINavigationBar.appearance().largeTitleTextAttributes = nil
+            return
+        }
+
+        guard let psName = NativeUIFontResolver.postScriptName(for: family) else { return }
+
+        if let title = UIFont(name: psName, size: 17) {
+            UINavigationBar.appearance().titleTextAttributes = [.font: title]
+        }
+        if let large = UIFont(name: psName, size: 34) {
+            UINavigationBar.appearance().largeTitleTextAttributes = [.font: large]
+        }
     }
 }
 
@@ -183,16 +210,30 @@ struct NUIScaledFontModifier: ViewModifier {
         self.fontName = fontName
     }
 
+    @ObservedObject private var themeStore = NativeUITheme.shared
+    @Environment(\.colorScheme) private var colorScheme
+
     func body(content: Content) -> some View {
         // A resolvable custom font wins; the weight still applies (SwiftUI
         // selects/synthesizes it within the family). Unknown names — or none —
         // fall back to the system font unchanged. `size` is already Dynamic-
         // Type-scaled by `@ScaledMetric`, so the custom font uses it as-is.
-        if let fontName, let custom = NativeUIFontResolver.font(fontName, size: size) {
+        if let name = effectiveFontName, let custom = NativeUIFontResolver.font(name, size: size) {
             content.font(custom.weight(weight))
         } else {
             content.font(.system(size: size, weight: weight, design: design))
         }
+    }
+
+    /// Explicit per-element font first; otherwise the app-wide default from
+    /// the theme's `font-family` token — but only for the default design, so
+    /// explicit `font-serif` / `font-mono` classes still win over the default.
+    private var effectiveFontName: String? {
+        if let fontName { return fontName }
+        guard design == .default else { return nil }
+
+        let family = themeStore.resolve(for: colorScheme).fontFamily
+        return (family.isEmpty || family == "System") ? nil : family
     }
 }
 

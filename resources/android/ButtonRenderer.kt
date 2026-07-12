@@ -63,7 +63,8 @@ object ButtonRenderer {
         val pressCb = p.getCallbackId("on_press").let { if (it != 0) it else node.onPress }
         val hasMenu = p.getBool("has_menu")
         val fontName = p.getString("font_name")
-        val customFontFamily = if (fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, fontName) else null
+        val customFontFamily = (if (fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, fontName) else null)
+            ?: nuiThemeDefaultFontFamily(LocalContext.current)
 
         // Read the active token set from the shared store. Using the singleton
         // rather than a CompositionLocal because nothing in the render tree

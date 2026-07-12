@@ -15,6 +15,13 @@ func registerNativeUIChrome() {
         let overlayNode = root.children.first { $0.type == "floating_overlay" }
         return AnyView(NativeFloatingOverlayHost(overlayNode: overlayNode) { content })
     }
+
+    // Resolve chrome font tokens (per-layout / per-bar `font_name` props on
+    // the root sentinels) for core's chrome renderers — bundle lookup +
+    // CoreText registration + PostScript naming is this plugin's knowledge.
+    NativeChromeFontResolver.resolvePostScriptName = { token in
+        NativeUIFontResolver.postScriptName(for: token)
+    }
 }
 
 /// Global open/close state for the content-agnostic side drawer

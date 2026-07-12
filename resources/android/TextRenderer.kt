@@ -48,7 +48,9 @@ object TextRenderer {
         val fontStyle = resolveFontStyle(p.getInt("font_style"))
         val fontName = p.getString("font_name")
         val customFamily = if (fontName.isNotEmpty()) NativeUIFontResolver.resolve(LocalContext.current, fontName) else null
-        val fontFamily = customFamily ?: resolveFontFamily(p.getInt("font_family"))
+        val fontFamily = customFamily
+            ?: resolveFontFamily(p.getInt("font_family"))
+            ?: nuiThemeDefaultFontFamily(LocalContext.current)
         val textDecoration = resolveDecoration(p.getInt("underline"), p.getInt("line_through"))
         val letterSpacingEm = p.getFloat("letter_spacing", 0f)
         val lineHeight = nuiLineHeightUnit(p.getFloat("line_height_px", 0f), p.getFloat("line_height", 0f), fontSize)
@@ -183,7 +185,8 @@ private fun AnnotatedString.Builder.appendTextRuns(node: NativeUINode, inherited
             fontWeight = resolveFontWeight(ctx.fontWeightInt),
             fontStyle = if (ctx.italic) FontStyle.Italic else FontStyle.Normal,
             fontFamily = (if (ctx.fontName.isNotEmpty()) NativeUIFontResolver.resolve(context, ctx.fontName) else null)
-                ?: resolveFontFamily(ctx.fontFamilyInt),
+                ?: resolveFontFamily(ctx.fontFamilyInt)
+                ?: nuiThemeDefaultFontFamily(context),
             letterSpacing = if (ctx.letterSpacingEm != 0f) ctx.letterSpacingEm.em else TextUnit.Unspecified,
             textDecoration = resolveDecoration(p.getInt("underline"), p.getInt("line_through")),
             background = if (effectiveBg != 0) argbToComposeColor(effectiveBg) else Color.Unspecified,

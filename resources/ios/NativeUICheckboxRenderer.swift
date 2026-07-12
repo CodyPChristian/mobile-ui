@@ -41,6 +41,7 @@ struct NativeUICheckboxRenderer: View {
                     .foregroundColor(checked ? theme.primary : theme.onSurfaceVariant)
                 if !label.isEmpty {
                     Text(label)
+                        .nuiScaledFont(size: 17)
                         .foregroundColor(theme.onSurface)
                 }
             }
