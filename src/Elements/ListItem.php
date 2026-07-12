@@ -190,6 +190,15 @@ class ListItem extends Element
             $this->onSwipeDelete($attrs['on-swipe-delete'] ?? $attrs['onSwipeDelete']);
         }
 
+        // Leading / trailing control change callbacks (checkbox, radio,
+        // switch). Both spellings, matching `on-swipe-delete` above.
+        if (isset($attrs['on-leading-change']) || isset($attrs['onLeadingChange'])) {
+            $this->onLeadingChange($attrs['on-leading-change'] ?? $attrs['onLeadingChange']);
+        }
+        if (isset($attrs['on-trailing-change']) || isset($attrs['onTrailingChange'])) {
+            $this->onTrailingChange($attrs['on-trailing-change'] ?? $attrs['onTrailingChange']);
+        }
+
         // Swipe actions — new structured multi-action API. Each entry
         // is `['method' => …, 'label' => …, 'icon' => …, 'tint' => …,
         // 'role' => …]`. Both arrays support 1+ actions.

@@ -27,6 +27,9 @@ private func parseListItemHex(_ hex: String) -> Color? {
 struct NativeUIListItemRenderer: View {
     let node: NativeUINode
 
+    @ObservedObject private var themeStore = NativeUITheme.shared
+    @Environment(\.colorScheme) private var colorScheme
+
     var body: some View {
         let p = node.props
         let headline = p.getString("headline")
@@ -46,6 +49,8 @@ struct NativeUIListItemRenderer: View {
         let leadingIcon = p.getString("leading_icon")
         let leadingMonogramColor = p.getColor("leading_monogram_color", default: 0)
         let leadingIconBgColor = p.getColor("leading_icon_bg_color", default: 0)
+        let leadingChecked = p.getBool("leading_checked")
+        let onLeadingChangeCb = p.getCallbackId("on_leading_change")
 
         // Trailing content
         let trailingType = p.getString("trailing_type")
@@ -53,6 +58,8 @@ struct NativeUIListItemRenderer: View {
         let trailingIcon = p.getString("trailing_icon")
         let trailingTextColor = p.getColor("trailing_text_color", default: 0)
         let trailingIconColor = p.getColor("trailing_icon_color", default: 0)
+        let trailingChecked = p.getBool("trailing_checked")
+        let onTrailingChangeCb = p.getCallbackId("on_trailing_change")
 
         HStack(spacing: 16) {
             // Leading content
@@ -60,7 +67,9 @@ struct NativeUIListItemRenderer: View {
                 type: leadingType.isEmpty ? (leadingIcon.isEmpty ? "" : "icon") : leadingType,
                 value: leadingValue.isEmpty ? leadingIcon : leadingValue,
                 monogramColor: leadingMonogramColor,
-                iconBgColor: leadingIconBgColor
+                iconBgColor: leadingIconBgColor,
+                checked: leadingChecked,
+                changeCb: onLeadingChangeCb
             )
 
             // Text content
@@ -96,7 +105,9 @@ struct NativeUIListItemRenderer: View {
                     type: trailingType.isEmpty ? (trailingIcon.isEmpty ? "" : "icon") : trailingType,
                     value: trailingValue.isEmpty ? trailingIcon : trailingValue,
                     iconColor: trailingIconColor,
-                    textColor: trailingTextColor
+                    textColor: trailingTextColor,
+                    checked: trailingChecked,
+                    changeCb: onTrailingChangeCb
                 )
             }
         }
@@ -108,7 +119,7 @@ struct NativeUIListItemRenderer: View {
     }
 
     @ViewBuilder
-    private func buildLeadingContent(type: String, value: String, monogramColor: Int, iconBgColor: Int = 0) -> some View {
+    private func buildLeadingContent(type: String, value: String, monogramColor: Int, iconBgColor: Int = 0, checked: Bool = false, changeCb: Int = 0) -> some View {
         switch type {
         case "icon":
             if iconBgColor != 0 {
@@ -156,13 +167,51 @@ struct NativeUIListItemRenderer: View {
             .clipShape(RoundedRectangle(cornerRadius: 4))
             .accessibilityHidden(true)
         case "checkbox":
-            Image(systemName: "square")
-                .foregroundColor(.secondary)
+            selectionControl(
+                glyph: checked ? "checkmark.square.fill" : "square",
+                checked: checked,
+                changeCb: changeCb,
+                // Checkbox toggles; a11y mirrors NativeUICheckboxRenderer.
+                sendValue: !checked,
+                a11yValue: checked ? "Checked" : "Unchecked"
+            )
         case "radio":
-            Image(systemName: "circle")
-                .foregroundColor(.secondary)
+            selectionControl(
+                glyph: checked ? "circle.inset.filled" : "circle",
+                checked: checked,
+                changeCb: changeCb,
+                // Radios select (never deselect on tap).
+                sendValue: true,
+                a11yValue: checked ? "Selected" : "Not selected"
+            )
         default:
             EmptyView()
+        }
+    }
+
+    /// Leading/trailing checkbox + radio glyph — interactive when the row
+    /// registered `onLeadingChange()` / `onTrailingChange()` (parity with the
+    /// Android renderer, which has always dispatched these), a state-correct
+    /// static glyph otherwise. `.borderless` keeps the control's tap distinct
+    /// from the row's own press handler inside a List.
+    @ViewBuilder
+    private func selectionControl(glyph: String, checked: Bool, changeCb: Int, sendValue: Bool, a11yValue: String) -> some View {
+        let theme = themeStore.resolve(for: colorScheme)
+        let tinted = Image(systemName: glyph)
+            .nuiScaledFont(size: 22)
+            .foregroundColor(checked ? theme.primary : theme.onSurfaceVariant)
+
+        if changeCb != 0 {
+            Button {
+                NativeUIBridge.sendCheckboxChangeEvent(changeCb, nodeId: node.id, value: sendValue)
+            } label: {
+                tinted.nuiMinTapTarget()
+            }
+            .buttonStyle(.borderless)
+            .accessibilityValue(a11yValue)
+        } else {
+            tinted
+                .accessibilityValue(a11yValue)
         }
     }
 
@@ -186,7 +235,7 @@ struct NativeUIListItemRenderer: View {
     }
 
     @ViewBuilder
-    private func buildTrailingContent(type: String, value: String, iconColor: Int, textColor: Int) -> some View {
+    private func buildTrailingContent(type: String, value: String, iconColor: Int, textColor: Int, checked: Bool = false, changeCb: Int = 0) -> some View {
         switch type {
         case "icon":
             Image(systemName: getIconForName(value))
@@ -244,8 +293,13 @@ struct NativeUIListItemRenderer: View {
         case "switch":
             EmptyView() // Switch requires state management - handled at a higher level
         case "checkbox":
-            Image(systemName: "square")
-                .foregroundColor(.secondary)
+            selectionControl(
+                glyph: checked ? "checkmark.square.fill" : "square",
+                checked: checked,
+                changeCb: changeCb,
+                sendValue: !checked,
+                a11yValue: checked ? "Checked" : "Unchecked"
+            )
         default:
             EmptyView()
         }
