@@ -22,6 +22,18 @@ class Theme
     private static array $tokens = [];
 
     /**
+     * Font aliases — semantic name → resources/fonts/ file token, from
+     * `config('native-ui.fonts')`. Rides the theme payload as `fonts`; the
+     * native font resolvers consult it before file lookup, so `font="accent"`
+     * works everywhere a font token does (elements, chrome, even the
+     * `font-family` token itself). The `default` alias, when set, becomes the
+     * app-wide default font.
+     *
+     * @var array<string, string>
+     */
+    private static array $fonts = [];
+
+    /**
      * Initial load from config. Replaces any existing tokens.
      * Called by NativeUIServiceProvider during boot.
      */
@@ -29,6 +41,20 @@ class Theme
     {
         static::$tokens = static::normalizeColors($tokens);
         static::pushToNative();
+    }
+
+    /**
+     * Replace the font alias map. Called by NativeUIServiceProvider during
+     * boot (before load(), which triggers the push) — call it yourself when
+     * re-aliasing at runtime and the push follows automatically.
+     */
+    public static function fonts(array $aliases, bool $push = false): void
+    {
+        static::$fonts = $aliases;
+
+        if ($push) {
+            static::pushToNative();
+        }
     }
 
     /**
@@ -69,6 +95,17 @@ class Theme
 
         $tokens['dark'] = $dark;
 
+        // Font aliases ride the same payload. `default` doubles as the
+        // app-wide default font: it wins over a literal `font-family` token
+        // (the alias map is the newer, preferred spelling).
+        if (! empty(static::$fonts)) {
+            $tokens['fonts'] = static::$fonts;
+
+            if (isset(static::$fonts['default'])) {
+                $tokens['font-family'] = static::$fonts['default'];
+            }
+        }
+
         return $tokens;
     }
 
@@ -83,6 +120,7 @@ class Theme
     public static function reset(): void
     {
         static::$tokens = [];
+        static::$fonts = [];
     }
 
     /**

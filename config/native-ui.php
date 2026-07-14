@@ -117,4 +117,24 @@ return [
         'font-family' => 'System',
     ],
 
+    /*
+    |---------------------------------------------------------------------------
+    | Font aliases
+    |---------------------------------------------------------------------------
+    |
+    | Semantic names for bundled fonts (resources/fonts/ file tokens, minus
+    | the extension). Use an alias anywhere a font token works — the `font`
+    | attribute (`font="accent"`), chrome ->font() builders, or the layout
+    | $font property. The special `default` alias sets the app-wide default
+    | font (and supersedes the `font-family` token above).
+    |
+    |   'fonts' => [
+    |       'default' => 'Inter-Regular',
+    |       'accent'  => 'DynaPuff-Regular',
+    |   ],
+    |
+    */
+
+    'fonts' => [],
+
 ];

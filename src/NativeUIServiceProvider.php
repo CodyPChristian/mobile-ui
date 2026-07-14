@@ -45,7 +45,9 @@ class NativeUIServiceProvider extends ServiceProvider
 
         // Load the merged config into the runtime Theme store. Consumers can
         // override with Theme::merge([...]) from their own service provider
-        // after parent::boot().
+        // after parent::boot(). Font aliases load first (no push) so the
+        // theme push from load() carries them in one payload.
+        Theme::fonts(config('native-ui.fonts', []));
         Theme::load(config('native-ui.theme', []));
 
         // Enable `bg-theme-*` / `text-theme-*` / `border-theme-*` Tailwind
