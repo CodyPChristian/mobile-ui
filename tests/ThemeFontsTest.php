@@ -21,16 +21,16 @@ afterEach(function () {
 });
 
 it('carries the alias map in the theme payload', function () {
-    Theme::fonts(['accent' => 'DynaPuff-Regular']);
+    Theme::fonts(['accent' => 'accent']);
     Theme::load(['font-family' => 'System']);
 
-    expect(Theme::all()['fonts'])->toBe(['accent' => 'DynaPuff-Regular']);
+    expect(Theme::all()['fonts'])->toBe(['accent' => 'accent']);
 });
 
 it('promotes the default alias to the font-family token', function () {
     Theme::fonts([
         'default' => 'Inter-Regular',
-        'accent' => 'DynaPuff-Regular',
+        'accent' => 'accent',
     ]);
     Theme::load(['font-family' => 'System']);
 
@@ -38,7 +38,7 @@ it('promotes the default alias to the font-family token', function () {
 });
 
 it('leaves font-family alone when no default alias exists', function () {
-    Theme::fonts(['accent' => 'DynaPuff-Regular']);
+    Theme::fonts(['accent' => 'accent']);
     Theme::load(['font-family' => 'Lobster-Regular']);
 
     expect(Theme::all()['font-family'])->toBe('Lobster-Regular');
