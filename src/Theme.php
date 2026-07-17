@@ -40,6 +40,7 @@ class Theme
     public static function load(array $tokens): void
     {
         static::$tokens = static::normalizeColors($tokens);
+        static::syncConfig();
         static::pushToNative();
     }
 
@@ -64,6 +65,7 @@ class Theme
     public static function merge(array $tokens): void
     {
         static::$tokens = static::deepMerge(static::$tokens, static::normalizeColors($tokens));
+        static::syncConfig();
         static::pushToNative();
     }
 
@@ -151,6 +153,29 @@ class Theme
     }
 
     // ─── Internals ────────────────────────────────────────────────────────────
+
+    /**
+     * Mirror the effective light/dark color blocks back into the Laravel
+     * config repository. Core's `theme()` helper reads
+     * `config('native-ui.theme.{mode}.{token}')` directly, so without this
+     * write-back it hands chrome setters the raw authored strings
+     * (`red-500`) that the native color parsers can't decode — they fall
+     * back to #000. Syncing the effective set (including the auto-derived
+     * dark block) keeps the helper, the renderers, and the native theme
+     * store reading identical wire-format hex. No-ops outside a booted
+     * Laravel app (plain Pest runs, early boot).
+     */
+    private static function syncConfig(): void
+    {
+        if (! function_exists('app') || ! app()->bound('config')) {
+            return;
+        }
+
+        $all = static::all();
+
+        app('config')->set('native-ui.theme.light', $all['light'] ?? []);
+        app('config')->set('native-ui.theme.dark', $all['dark'] ?? []);
+    }
 
     /**
      * Resolve authored color tokens in the `light` / `dark` blocks to
