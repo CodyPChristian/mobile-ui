@@ -10,7 +10,6 @@ use Nativephp\NativeUi\Theme;
  * alias becomes the app-wide default font by overriding the `font-family`
  * token in the same payload.
  */
-
 beforeEach(function () {
     JumpBridge::instance()->mute();
     Theme::reset();

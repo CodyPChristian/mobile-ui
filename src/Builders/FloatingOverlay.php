@@ -4,6 +4,7 @@ namespace Nativephp\NativeUi\Builders;
 
 use Illuminate\View\View;
 use Native\Mobile\Edge\Element;
+use Nativephp\NativeUi\Concerns\HasFloatingOverlay;
 
 /**
  * Fluent builder for a content-agnostic floating overlay — a free-floating
@@ -13,7 +14,7 @@ use Native\Mobile\Edge\Element;
  * null (or a builder wrapping nothing) leaves the screen untouched.
  *
  * A layout returns a FloatingOverlay from its `floatingOverlay()` method
- * (provide it with the {@see \Nativephp\NativeUi\Concerns\HasFloatingOverlay}
+ * (provide it with the {@see HasFloatingOverlay}
  * trait). The content is any Blade view (or pre-built Element), so devs can
  * float whatever UI they want — a pill, a banner, a mini-player:
  *

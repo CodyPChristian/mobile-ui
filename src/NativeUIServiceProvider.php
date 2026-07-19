@@ -11,6 +11,8 @@ use Native\Mobile\Edge\NativeComponent;
 use Native\Mobile\Edge\TailwindParser;
 use Nativephp\NativeUi\Builders\Drawer;
 use Nativephp\NativeUi\Builders\FloatingOverlay as FloatingOverlayBuilder;
+use Nativephp\NativeUi\Concerns\HasFloatingOverlay;
+use Nativephp\NativeUi\Concerns\InteractsWithFloatingOverlay;
 use Nativephp\NativeUi\Console\CopyFontsCommand;
 use Nativephp\NativeUi\Console\FontCommand;
 use Nativephp\NativeUi\Console\GenerateIconsCommand;
@@ -39,8 +41,7 @@ class NativeUIServiceProvider extends ServiceProvider
         // freely. Multiple archetypes (feed/detail/etc.) can be added by
         // copying app.blade.php to neighboring files.
         $this->publishes([
-            __DIR__.'/../resources/stubs/views/components/layouts/app.blade.php'
-                => resource_path('views/components/layouts/app.blade.php'),
+            __DIR__.'/../resources/stubs/views/components/layouts/app.blade.php' => resource_path('views/components/layouts/app.blade.php'),
         ], 'native-ui-layouts');
 
         // Load the merged config into the runtime Theme store. Consumers can
@@ -138,8 +139,8 @@ class NativeUIServiceProvider extends ServiceProvider
      * hoists it onto a top layer over the content.
      *
      * Discovery is via `method_exists`, so layouts/screens opt in by using the
-     * {@see \Nativephp\NativeUi\Concerns\HasFloatingOverlay} /
-     * {@see \Nativephp\NativeUi\Concerns\InteractsWithFloatingOverlay} traits (or
+     * {@see HasFloatingOverlay} /
+     * {@see InteractsWithFloatingOverlay} traits (or
      * by declaring the methods themselves) — core never knows.
      */
     protected function registerFloatingOverlay(): void

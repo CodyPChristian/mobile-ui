@@ -16,7 +16,6 @@ use Nativephp\NativeUi\Elements\OutlinedTextInput;
  * Core `text` element coverage lives in mobile-air (TextSelectionAndRunsTest);
  * these pin the same contract on the native-ui button + text inputs.
  */
-
 function nuiProps(object $el): array
 {
     return $el->toArray(new CallbackRegistry)['props'];
