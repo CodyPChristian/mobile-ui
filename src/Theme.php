@@ -277,7 +277,7 @@ class Theme
         $h = match (true) {
             $max === $r => ($g - $b) / $d + ($g < $b ? 6.0 : 0.0),
             $max === $g => ($b - $r) / $d + 2.0,
-            default     => ($r - $g) / $d + 4.0,
+            default => ($r - $g) / $d + 4.0,
         };
         $h /= 6.0;
 
@@ -303,11 +303,21 @@ class Theme
 
     private static function hueToRgb(float $p, float $q, float $t): float
     {
-        if ($t < 0.0) $t += 1.0;
-        if ($t > 1.0) $t -= 1.0;
-        if ($t < 1.0 / 6.0) return $p + ($q - $p) * 6.0 * $t;
-        if ($t < 1.0 / 2.0) return $q;
-        if ($t < 2.0 / 3.0) return $p + ($q - $p) * (2.0 / 3.0 - $t) * 6.0;
+        if ($t < 0.0) {
+            $t += 1.0;
+        }
+        if ($t > 1.0) {
+            $t -= 1.0;
+        }
+        if ($t < 1.0 / 6.0) {
+            return $p + ($q - $p) * 6.0 * $t;
+        }
+        if ($t < 1.0 / 2.0) {
+            return $q;
+        }
+        if ($t < 2.0 / 3.0) {
+            return $p + ($q - $p) * (2.0 / 3.0 - $t) * 6.0;
+        }
 
         return $p;
     }
