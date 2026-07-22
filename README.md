@@ -5,13 +5,13 @@ A NativePHP Mobile plugin
 ## Installation
 
 ```bash
-composer require nativephp/native-ui
+composer require nativephp/mobile-ui
 ```
 
 ## Usage
 
 ```php
-use Nativephp\NativeUi\Facades\NativeUI;
+use Native\Mobile\UI\Facades\NativeUI;
 
 // Execute functionality
 $result = NativeUI::execute(['option1' => 'value']);
@@ -25,7 +25,7 @@ $status = NativeUI::getStatus();
 ```php
 use Livewire\Attributes\On;
 
-#[On('native:Nativephp\NativeUi\Events\NativeUICompleted')]
+#[On('native:Native\Mobile\UI\Events\NativeUICompleted')]
 public function handleNativeUICompleted($result, $id = null)
 {
     // Handle the event
@@ -76,7 +76,7 @@ content description on Android.
 ```
 
 ```php
-use Nativephp\NativeUi\Elements\Button;
+use Native\Mobile\UI\Elements\Button;
 
 Button::make()
     ->icon('plus')
@@ -103,7 +103,7 @@ of that in a unit test:
 ```php
 use Illuminate\Config\Repository;
 use Illuminate\Container\Container;
-use Nativephp\NativeUi\Theme;
+use Native\Mobile\UI\Theme;
 
 it('normalizes tokens and mirrors them into config', function () {
     Container::getInstance()->instance('config', new Repository);
@@ -133,7 +133,7 @@ same way. Elements expose `toArray(new CallbackRegistry)` (via
 
 ```php
 use Native\Mobile\Edge\CallbackRegistry;
-use Nativephp\NativeUi\Elements\Button;
+use Native\Mobile\UI\Elements\Button;
 
 it('serializes typography props on an element', function () {
     $props = Button::make('Save')->font('Inter-Bold')->toArray(new CallbackRegistry)['props'];
@@ -152,7 +152,7 @@ use — and `reset()` between tests:
 
 ```php
 use Native\Mobile\JumpBridge;
-use Nativephp\NativeUi\Theme;
+use Native\Mobile\UI\Theme;
 
 beforeEach(function () {
     JumpBridge::instance()->mute();

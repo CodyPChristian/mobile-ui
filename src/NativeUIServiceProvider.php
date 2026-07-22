@@ -1,6 +1,6 @@
 <?php
 
-namespace Nativephp\NativeUi;
+namespace Native\Mobile\UI;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\View\View;
@@ -9,15 +9,15 @@ use Native\Mobile\Edge\Element;
 use Native\Mobile\Edge\Layouts\NativeLayout;
 use Native\Mobile\Edge\NativeComponent;
 use Native\Mobile\Edge\TailwindParser;
-use Nativephp\NativeUi\Builders\Drawer;
-use Nativephp\NativeUi\Builders\FloatingOverlay as FloatingOverlayBuilder;
-use Nativephp\NativeUi\Concerns\HasFloatingOverlay;
-use Nativephp\NativeUi\Concerns\InteractsWithFloatingOverlay;
-use Nativephp\NativeUi\Console\CopyFontsCommand;
-use Nativephp\NativeUi\Console\FontCommand;
-use Nativephp\NativeUi\Console\GenerateIconsCommand;
-use Nativephp\NativeUi\Elements\FloatingOverlay as FloatingOverlayElement;
-use Nativephp\NativeUi\Elements\NativeDrawer;
+use Native\Mobile\UI\Builders\Drawer;
+use Native\Mobile\UI\Builders\FloatingOverlay as FloatingOverlayBuilder;
+use Native\Mobile\UI\Concerns\HasFloatingOverlay;
+use Native\Mobile\UI\Concerns\InteractsWithFloatingOverlay;
+use Native\Mobile\UI\Console\CopyFontsCommand;
+use Native\Mobile\UI\Console\FontCommand;
+use Native\Mobile\UI\Console\GenerateIconsCommand;
+use Native\Mobile\UI\Elements\FloatingOverlay as FloatingOverlayElement;
+use Native\Mobile\UI\Elements\NativeDrawer;
 
 class NativeUIServiceProvider extends ServiceProvider
 {

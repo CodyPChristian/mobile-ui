@@ -1,9 +1,9 @@
 <?php
 
-namespace Nativephp\NativeUi\Components;
+namespace Native\Mobile\UI\Components;
 
 use Native\Mobile\Edge\Components\Native\NativeBladeComponent;
-use Nativephp\NativeUi\Concerns\HasFloatingOverlay;
+use Native\Mobile\UI\Concerns\HasFloatingOverlay;
 
 /**
  * Blade component for the `floating_overlay` sentinel. The floating overlay is

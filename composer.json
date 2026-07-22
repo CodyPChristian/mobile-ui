@@ -1,12 +1,12 @@
 {
-    "name": "nativephp/native-ui",
-    "description": "A NativePHP Mobile plugin",
-    "type": "nativephp-ui-plugin",
+    "name": "nativephp/mobile-ui",
+    "description": "Native SwiftUI and Jetpack Composer components for NativePHP",
+    "type": "nativephp-plugin",
     "license": "MIT",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "you@example.com"
+            "name": "NativePHP",
+            "email": "support@nativephp.com"
         }
     ],
     "require": {
@@ -15,13 +15,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Nativephp\\NativeUi\\": "src/"
+            "Native\\Mobile\\UI\\": "src/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Nativephp\\NativeUi\\NativeUIServiceProvider"
+                "Native\\Mobile\\UI\\NativeUIServiceProvider"
             ]
         },
         "nativephp": {
@@ -39,5 +39,11 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true
         }
-    }
+    },
+    "funding": [
+        {
+            "type": "other",
+            "url": "https://nativephp.com/sponsor"
+        }
+    ]
 }
