@@ -1,7 +1,4 @@
 {
-    "name": "nativephp/mobile-ui",
-    "version": "1.0.0",
-    "description": "Material3 Compose UI components for NativePHP Mobile",
     "namespace": "NativeUI",
     "platforms": [
         "android",
