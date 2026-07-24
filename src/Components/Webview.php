@@ -4,12 +4,12 @@ namespace Native\Mobile\UI\Components;
 
 use Native\Mobile\Edge\Components\Native\NativeBladeComponent;
 
-class Chip extends NativeBladeComponent
+class Webview extends NativeBladeComponent
 {
     protected bool $isSelfClosing = true;
 
     protected function elementType(): string
     {
-        return 'chip';
+        return 'webview';
     }
 }

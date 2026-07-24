@@ -1,11 +1,11 @@
 <?php
 
-namespace Nativephp\NativeUi\Builders;
+namespace Native\Mobile\UI\Builders;
 
 use Illuminate\View\View;
 use Native\Mobile\Edge\Element;
-use Nativephp\NativeUi\Concerns\HasLayoutDrawer;
-use Nativephp\NativeUi\Elements\NativeDrawer;
+use Native\Mobile\UI\Concerns\HasLayoutDrawer;
+use Native\Mobile\UI\Elements\NativeDrawer;
 
 /**
  * Fluent builder for a content-agnostic side drawer (X-style side nav).
@@ -15,8 +15,8 @@ use Nativephp\NativeUi\Elements\NativeDrawer;
  * Blade view (or pre-built Element), so devs can put whatever UI they want
  * inside:
  *
- *   use Nativephp\NativeUi\Builders\Drawer;
- *   use Nativephp\NativeUi\Concerns\HasLayoutDrawer;
+ *   use Native\Mobile\UI\Builders\Drawer;
+ *   use Native\Mobile\UI\Concerns\HasLayoutDrawer;
  *
  *   class AppLayout extends NativeLayout
  *   {

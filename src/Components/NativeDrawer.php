@@ -1,9 +1,9 @@
 <?php
 
-namespace Nativephp\NativeUi\Components;
+namespace Native\Mobile\UI\Components;
 
 use Native\Mobile\Edge\Components\Native\NativeBladeComponent;
-use Nativephp\NativeUi\Concerns\HasLayoutDrawer;
+use Native\Mobile\UI\Concerns\HasLayoutDrawer;
 
 /**
  * Blade component for the `native_drawer` sentinel. The layout drawer is
