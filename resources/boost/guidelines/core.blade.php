@@ -44,6 +44,20 @@ paths serialize to the same wire tree.
   and `bg-theme-*` / `text-theme-*` / `border-theme-*` classes emit both
   modes automatically. This works for Blade-declared AND programmatically
   built elements (`Element->class()`).
+- The theme token map is open-ended: add any semantic role your design
+  needs (`success`, `warning`, `outline-variant`, …) to both `light` and
+  `dark` blocks and the matching `*-theme-*` classes resolve immediately —
+  never fall back to hardcoded hex for a missing role.
+- `success`/`on-success` and `outline-variant` are first-class tokens: the
+  native theme stores parse them (with fallbacks), and `variant="success"`
+  works on `<native:button>` and `<native:badge>` for confirm / "safe to
+  proceed" actions — prefer it over green hex or misusing `primary`.
+- Theme classes accept opacity modifiers like every other color class:
+  `bg-theme-primary/15` is the tonal-fill idiom (alpha applies to the dark
+  companion too).
+- In PHP — layout chrome builders (`->activeColor()`, `->backgroundColor()`),
+  dynamic styling — read tokens with the appearance-aware `theme()` helper
+  (`theme('primary')`) instead of raw `config()` paths or pasted hex.
 - Disabled controls use the `surface-variant` (fill) + `on-surface-variant`
   (label) tokens on both platforms — tune disabled contrast by adjusting
   those two tokens, not per-component.
