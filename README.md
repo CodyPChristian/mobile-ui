@@ -91,6 +91,73 @@ decorative (silent to screen readers) unless given an `a11y-label`. List items
 with a trailing icon button take `trailing-a11y-label` (fluent:
 `->trailingA11yLabel()`) to label that button separately from the row.
 
+## Caret & Selection Reporting
+
+> **Requires** a `nativephp/mobile` core that understands the `@selectionChange`
+> directive and the `text_selection` callback kind (shipping alongside this
+> feature). On older cores the Blade directive is ignored and the fluent
+> `->onSelectionChange()` handler will be invoked with the wrong arity.
+
+The text inputs (`<native:bare-text-input>`, `<native:outlined-text-input>`,
+`<native:filled-text-input>`) can report caret position and text selection back
+to PHP via `@selectionChange`. The handler receives the current text plus the
+selection range:
+
+```php
+public function onCaretMove(string $text, int $selectionStart, int $selectionEnd)
+{
+    // $selectionStart === $selectionEnd when the caret is a plain cursor;
+    // they differ when a range of text is selected.
+}
+```
+
+Offsets are **Unicode code points** into the text (not UTF-16 units or bytes),
+so emoji and other astral characters count as one — safe to feed straight into
+`mb_substr(..., encoding: 'UTF-8')`.
+
+```blade
+<native:outlined-text-input
+    label="Message"
+    @selectionChange="onCaretMove"
+    selection-debounce-ms="100"
+/>
+```
+
+```php
+use Native\Mobile\UI\Elements\OutlinedTextInput;
+
+OutlinedTextInput::make()
+    ->label('Message')
+    ->onSelectionChange('onCaretMove')
+    ->selectionDebounceMs(100);
+```
+
+Events are coalesced on the native side — by default at most one every **50ms**
+while the caret moves (the trailing position always fires). Tune the window per
+input with `selection-debounce-ms` / `selectionDebounceMs` (fluent:
+`->selectionDebounceMs()`); when unset, nothing is serialized and the renderer
+default of 50ms applies.
+
+`@selectionChange` is never emitted for `secure` inputs — the renderers
+suppress it so caret telemetry can't leak password-field context.
+
+A typical use is typeahead / mention triggers, where `@change` alone can't tell
+you *where* the user is typing:
+
+```php
+public function onCaretMove(string $text, int $start, int $end)
+{
+    // Look backwards from the caret for an "@mention" trigger.
+    $before = mb_substr($text, 0, $start, 'UTF-8');
+
+    if (preg_match('/@(\w*)$/u', $before, $m)) {
+        $this->showMentionSuggestions($m[1]);
+    } else {
+        $this->hideMentionSuggestions();
+    }
+}
+```
+
 ## Testing
 
 Theme normalization and config write-back are pure PHP — no device, emulator,

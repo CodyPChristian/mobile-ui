@@ -23,7 +23,14 @@ use Native\Mobile\Icon\IosSymbol;
  *   - `prefix`, `suffix`, `leading-icon`, `trailing-icon` (decorations)
  *   - `size`                                          (sm | md | lg)
  *   - `a11y-label`, `a11y-hint`                       (accessibility)
- *   - `@change`, `@submit`                            (callbacks)
+ *   - `@change`, `@submit`, `@selectionChange`        (callbacks)
+ *
+ * `@selectionChange` reports caret / selection movement: the handler is
+ * called with `(string $text, int $selectionStart, int $selectionEnd)`,
+ * offsets in Unicode code points (start === end for a bare caret). Events
+ * are coalesced on the native side — 50ms by default, tunable per input
+ * via `selection-debounce-ms` / `->selectionDebounceMs()`. Never emitted
+ * for `secure` inputs (renderer-enforced).
  *
  * Subclasses (`OutlinedTextInput`, `FilledTextInput`) only override `$type`
  * so native renderers can dispatch to the right Material3 / SwiftUI primitive.
@@ -36,6 +43,8 @@ abstract class BaseTextInput extends Element
     protected ?string $changeCallback = null;
 
     protected ?string $submitCallback = null;
+
+    protected ?string $selectionChangeCallback = null;
 
     public static function make(): static
     {
@@ -136,6 +145,23 @@ abstract class BaseTextInput extends Element
         }
         if (isset($attrs['debounce-ms']) || isset($attrs['debounceMs'])) {
             $this->debounceMs((int) ($attrs['debounce-ms'] ?? $attrs['debounceMs']));
+        }
+
+        // Selection-change coalescing window. Only serialized when set —
+        // renderers fall back to 50ms when the prop is absent.
+        if (isset($attrs['selection-debounce-ms']) || isset($attrs['selectionDebounceMs'])) {
+            $this->selectionDebounceMs((int) ($attrs['selection-debounce-ms'] ?? $attrs['selectionDebounceMs']));
+        }
+
+        // `@selectionChange` → `_selectionChange` (precompiler rewrite).
+        // Newer cores wire this through the collector's applyCallbacks
+        // (`method_exists($element, 'onSelectionChange')`), but cores that
+        // predate the `text_selection` callback kind pass the attr through
+        // untouched — applyAttributes always receives the full attr set, so
+        // guard here too. Double-wiring is harmless: both paths set the same
+        // property to the same expression.
+        if (isset($attrs['_selectionChange'])) {
+            $this->onSelectionChange($attrs['_selectionChange']);
         }
     }
 
@@ -352,6 +378,19 @@ abstract class BaseTextInput extends Element
         return $this;
     }
 
+    /**
+     * Coalescing window for `@selectionChange` events, in milliseconds.
+     * When unset the renderers default to 50ms — the prop is only
+     * serialized when explicitly configured. Blade:
+     * `selection-debounce-ms` (or `selectionDebounceMs`).
+     */
+    public function selectionDebounceMs(int $ms): static
+    {
+        $this->inputProps['selection_debounce_ms'] = $ms;
+
+        return $this;
+    }
+
     // ── Callbacks ────────────────────────────────────────────────────────────
 
     public function onChange(string $method): static
@@ -368,6 +407,21 @@ abstract class BaseTextInput extends Element
         return $this;
     }
 
+    /**
+     * Caret / selection reporting. The handler is invoked as
+     * `method(string $text, int $selectionStart, int $selectionEnd)` —
+     * offsets in Unicode code points, `start === end` for a plain caret.
+     * Coalesced natively (50ms default; see `selectionDebounceMs()`).
+     * Never emitted for `secure` inputs (renderer-enforced).
+     * Blade: `@selectionChange="method"`.
+     */
+    public function onSelectionChange(string $method): static
+    {
+        $this->selectionChangeCallback = $method;
+
+        return $this;
+    }
+
     protected function resolveProps(CallbackRegistry $registry): array
     {
         $props = $this->inputProps;
@@ -377,6 +431,12 @@ abstract class BaseTextInput extends Element
         }
         if ($this->submitCallback !== null) {
             $props['on_submit'] = $registry->register($this->submitCallback);
+        }
+        if ($this->selectionChangeCallback !== null) {
+            // 'text_selection' kind tells NativeComponent::dispatch to decode
+            // the event's TEXT_CHANGE payload ("{start},{end}\x1F{text}") and
+            // call the handler with (text, selectionStart, selectionEnd).
+            $props['on_selection_change'] = $registry->register($this->selectionChangeCallback, 'text_selection');
         }
 
         return $props;

@@ -18,11 +18,19 @@ paths serialize to the same wire tree.
   Use `.live` / `.blur` / `.debounce.Xms` modifiers to control sync frequency.
 - Wire callbacks with event attributes (`@press`, `@change`, `@submit`,
   `@dismiss`) pointing at public methods on the component.
+- Text inputs also take `@selectionChange` for caret / selection reporting:
+  the handler is called as `method(string $text, int $selectionStart, int
+  $selectionEnd)` with offsets in Unicode code points (`start === end` for a
+  plain caret). Events are coalesced natively (50ms default; tune with
+  `selection-debounce-ms`). Never fired on `secure` inputs. Use it for
+  typeahead / mention triggers where `@change` can't tell you *where* the
+  user is typing.
 
 @verbatim
 <code-snippet name="Declaring native elements in Blade" lang="blade">
 <native:column class="gap-4 p-4">
     <native:outlined-text-input label="Email" native:model.blur="email" />
+    <native:outlined-text-input label="Message" native:model="message" @selectionChange="onCaretMove" />
     <native:toggle label="Notifications" native:model="notify" />
     <native:button variant="primary" @press="save">Save</native:button>
 </native:column>
