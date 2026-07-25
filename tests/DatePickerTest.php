@@ -15,10 +15,16 @@ afterEach(function () {
     ElementRegistry::reset();
 });
 
-/** Serialize a fluent element straight to its props bag. */
+/**
+ * Serialize a fluent element straight to its props bag.
+ *
+ * `toArray()` omits the `props` key entirely when an element carries none,
+ * so a bare `DatePicker::make()` has no key to read — coalesce to an empty
+ * bag rather than tripping the return type.
+ */
 function pickerProps(DatePicker $picker, ?CallbackRegistry $registry = null): array
 {
-    return $picker->toArray($registry ?? new CallbackRegistry)['props'];
+    return $picker->toArray($registry ?? new CallbackRegistry)['props'] ?? [];
 }
 
 /** Serialize a Blade-style attribute bag through the collector. */
@@ -27,7 +33,7 @@ function pickerPropsFromAttrs(array $attrs): array
     NativeElementCollector::reset();
     NativeElementCollector::leaf('date_picker', $attrs);
 
-    return NativeElementCollector::collect()->toArray(new CallbackRegistry)['props'];
+    return NativeElementCollector::collect()->toArray(new CallbackRegistry)['props'] ?? [];
 }
 
 // ── The wire contract ────────────────────────────────────────────────────────

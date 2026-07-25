@@ -167,9 +167,17 @@ class DatePicker extends Element
     public function syncMode(string $mode): static
     {
         if ($mode !== 'live') {
+            // Name the SYNC MODE, not a directive spelling. The precompiler
+            // collapses `.lazy` into `blur` before we see it, so quoting
+            // "native:model.{$mode}" would tell a developer who wrote `.lazy`
+            // about a directive they never typed.
+            $directives = $mode === 'blur'
+                ? '`native:model.blur` / `native:model.lazy`'
+                : '`native:model.debounce.Xms`';
+
             throw new InvalidArgumentException(
-                "DatePicker commits on selection, so `native:model.{$mode}` has no effect. "
-                .'Use plain `native:model` (live) and defer in your component if you need to.'
+                "DatePicker commits on selection, so the `{$mode}` sync mode ({$directives}) has no effect. "
+                .'Use plain `native:model` (or `native:model.live`) and defer in your component if you need to.'
             );
         }
 
