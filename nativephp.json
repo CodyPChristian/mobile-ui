@@ -318,6 +318,14 @@
             "self_closing": true
         },
         {
+            "type": "date_picker",
+            "element": "Native\\Mobile\\UI\\Elements\\DatePicker",
+            "blade": "Native\\Mobile\\UI\\Components\\DatePicker",
+            "android_renderer": "com.nativephp.plugins.native_ui.ui.DatePickerRenderer",
+            "ios_renderer": "NativeUIDatePickerRenderer",
+            "self_closing": true
+        },
+        {
             "type": "radio_group",
             "element": "Native\\Mobile\\UI\\Elements\\RadioGroup",
             "blade": "Native\\Mobile\\UI\\Components\\RadioGroup",
