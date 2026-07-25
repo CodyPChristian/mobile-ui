@@ -145,7 +145,35 @@ class DatePicker extends Element
             $this->disabled();
         }
 
+        // `native:model` expands to `sync-mode="live"`; the modifier forms
+        // (`.blur`, `.debounce.300ms`) expand to modes this element can't
+        // honor. Validated rather than ignored — see `syncMode()`.
+        if (isset($attrs['sync-mode']) || isset($attrs['syncMode'])) {
+            $this->syncMode((string) ($attrs['sync-mode'] ?? $attrs['syncMode']));
+        }
+
         $this->applyA11yAttributes($attrs);
+    }
+
+    /**
+     * Accepted only as `live`. A picker commits discretely — there is no
+     * mid-gesture stream of values to defer or coalesce — so
+     * `native:model.blur` / `.debounce.Xms` have nothing to act on.
+     *
+     * Silently swallowing them would leave a developer believing they'd
+     * throttled something, so an unsupported mode is a hard error. Nothing
+     * is serialized: the renderers always commit on selection.
+     */
+    public function syncMode(string $mode): static
+    {
+        if ($mode !== 'live') {
+            throw new InvalidArgumentException(
+                "DatePicker commits on selection, so `native:model.{$mode}` has no effect. "
+                .'Use plain `native:model` (live) and defer in your component if you need to.'
+            );
+        }
+
+        return $this;
     }
 
     // ── Selection ────────────────────────────────────────────────────────────
@@ -324,6 +352,18 @@ class DatePicker extends Element
     {
         $props = $this->pickerProps;
         $mode = $props['mode'] ?? 'date';
+
+        // Neither platform can enforce a time-of-day range: SwiftUI's `in:`
+        // bounds an absolute instant (a bare "09:00" parses against a
+        // reference date, so the range never bites), and Material 3's
+        // TimePicker exposes no bounds API at all. Rather than accept
+        // constraints that quietly do nothing, refuse them.
+        if ($mode === 'time' && ($this->rawMin !== null || $this->rawMax !== null)) {
+            throw new InvalidArgumentException(
+                'DatePicker `min`/`max` cannot be enforced for mode="time" on either platform. '
+                .'Drop them and validate the chosen time in your component instead.'
+            );
+        }
 
         // Normalized here rather than in the setters: `mode()` may come after
         // `value()` in a fluent chain, and the mode picks the wire shape.

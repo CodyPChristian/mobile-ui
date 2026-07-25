@@ -281,3 +281,39 @@ it('drops per-instance styling like the other Model 3 elements', function () {
     expect(DatePicker::make()->getStyle())->toBe([]);
     expect(DatePicker::make()->getLayout())->not->toHaveKey('padding');
 });
+
+// ── Sync mode ────────────────────────────────────────────────────────────────
+
+it('accepts the live sync mode without serializing anything', function () {
+    // `native:model` expands to sync-mode="live"; a picker is always live.
+    $props = pickerPropsFromAttrs(['sync-mode' => 'live', 'value' => '2026-07-25']);
+
+    expect($props)->not->toHaveKey('sync_mode');
+    expect($props['value'])->toBe('2026-07-25');
+});
+
+it('rejects deferred sync modes rather than ignoring them', function (string $mode) {
+    // `native:model.blur` / `.debounce` have nothing to defer on a control
+    // that commits discretely — silently accepting them would mislead.
+    DatePicker::make()->syncMode($mode);
+})->with(['blur', 'debounce'])->throws(InvalidArgumentException::class);
+
+it('rejects a deferred sync mode arriving from a Blade directive', function () {
+    pickerPropsFromAttrs(['sync-mode' => 'blur']);
+})->throws(InvalidArgumentException::class);
+
+// ── Bounds that no platform can enforce ─────────────────────────────────────
+
+it('refuses min/max on a time picker', function (string $bound) {
+    // Neither SwiftUI nor Material 3 can bound a time-of-day range.
+    DatePicker::make()->mode('time')->{$bound}('09:00')->toArray(new CallbackRegistry);
+})->with(['min', 'max'])->throws(InvalidArgumentException::class, 'mode="time"');
+
+it('still allows bounds on date and datetime pickers', function (string $mode, string $bound) {
+    $props = pickerProps(DatePicker::make()->mode($mode)->min($bound));
+
+    expect($props['min'])->toBe($bound);
+})->with([
+    ['date', '2026-07-01'],
+    ['datetime', '2026-07-01T00:00'],
+]);

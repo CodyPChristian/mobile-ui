@@ -28,7 +28,12 @@ paths serialize to the same wire tree.
   `picker-style` = `compact` (default) / `inline` / `wheel` (NOT `display`,
   which is flex/layout display). `title`,
   `confirm-label`, and `cancel-label` are Android-only dialog chrome — pass
-  translated strings.
+  translated strings. `min`/`max` are NOT supported for `mode="time"` (they
+  throw), and sync-mode modifiers (`native:model.blur`) throw too — a picker
+  always commits on selection.
+- In tests, drive pickers with the `pickDate()` / `pickTime()` /
+  `pickDateTime()` / `clearPicker()` macros and assert with
+  `assertPicker()` / `assertPickerValue()` / `assertPickerEmpty()`.
 
 @verbatim
 <code-snippet name="Declaring native elements in Blade" lang="blade">

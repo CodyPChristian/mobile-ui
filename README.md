@@ -193,6 +193,41 @@ element.)
   seeded "today" — you get a change event only once the user actually picks.
 - `a11y-label` / `a11y-hint` are plumbed on both platforms; the current
   selection is additionally announced as the control's accessibility value.
+- **`min` / `max` are rejected for `mode="time"`.** Neither platform can
+  enforce a time-of-day range — SwiftUI's `in:` bounds an absolute instant, and
+  Material 3's `TimePicker` has no bounds API — so passing them throws rather
+  than silently doing nothing. Validate the chosen time in your component.
+- **`picker-style="inline"` falls back to compact for `mode="time"` on iOS.**
+  SwiftUI's `.graphical` style is date-only. Android embeds the time picker as
+  asked.
+- **Sync-mode modifiers are rejected.** A picker commits discretely, so
+  `native:model.blur` / `native:model.debounce.300ms` have nothing to defer;
+  they throw. Use plain `native:model`.
+
+### Testing
+
+The plugin registers picker vocabulary on the test harness, so screens read in
+picker terms rather than raw select-change plumbing:
+
+```php
+Native::visit('/booking')
+    ->pickDate('startsOn', '2026-12-24')
+    ->pickTime('opensAt', new DateTimeImmutable('18:05'))
+    ->pickDateTime('appointment', '2027-03-01T07:45')
+    ->clearPicker('deadline')
+    ->assertPicker('Starts', 'date')
+    ->assertPickerValue('Starts', '2026-12-24')
+    ->assertPickerEmpty('Deadline');
+```
+
+The `pick*` macros take an ISO string *or* any `DateTimeInterface` and
+normalize to the wire shape for that mode before dispatching, so a test using
+a Carbon instance or a full timestamp still sends exactly what the renderer
+would. `assertPicker*` match on the picker's `label`.
+
+Macros register only under a test runner, and only on a core whose
+`TestableComponent` is macroable — the same `method_exists` gate the camera
+plugin uses for its `FakeBridge` macros.
 
 ## Testing
 
