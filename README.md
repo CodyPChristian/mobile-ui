@@ -171,9 +171,11 @@ side.
 
 ### Display styles
 
-`display` picks the presentation, mapped to the nearest native idiom:
+`picker-style` picks the presentation, mapped to the nearest native idiom.
+(It is not called `display` — that name is already flex/layout display on every
+element.)
 
-| `display` | iOS | Android |
+| `picker-style` | iOS | Android |
 |---|---|---|
 | `compact` (default) | `.compact` — tap to popover | trigger field + modal dialog |
 | `inline` | `.graphical` — embedded calendar | embedded picker |
@@ -184,10 +186,10 @@ side.
 - `title`, `confirm-label`, and `cancel-label` are **Android only** — iOS
   commits on selection and has no dialog chrome to label. They are still
   user-visible strings, so pass translated values: `->confirmLabel(__('Done'))`.
-- On iOS with `display="compact"` and no value, a placeholder trigger stands
+- On iOS with `picker-style="compact"` and no value, a placeholder trigger stands
   in until first tap, because SwiftUI's compact picker always renders a
   concrete date and has no empty state.
-- With `display="inline"` and no initial value, neither platform commits the
+- With `picker-style="inline"` and no initial value, neither platform commits the
   seeded "today" — you get a change event only once the user actually picks.
 - `a11y-label` / `a11y-hint` are plumbed on both platforms; the current
   selection is additionally announced as the control's accessibility value.

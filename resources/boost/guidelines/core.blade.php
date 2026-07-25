@@ -25,7 +25,8 @@ paths serialize to the same wire tree.
   `min`, and `max` also accept any `DateTimeInterface`.
 - On the picker, `timezone` (IANA) names the calendar the user picks in and
   never rewrites the value; `locale` (BCP-47) is display-only. Use
-  `display` = `compact` (default) / `inline` / `wheel`. `title`,
+  `picker-style` = `compact` (default) / `inline` / `wheel` (NOT `display`,
+  which is flex/layout display). `title`,
   `confirm-label`, and `cancel-label` are Android-only dialog chrome — pass
   translated strings.
 

@@ -74,7 +74,7 @@ object DatePickerRenderer {
         val p = node.props
         val serverValue  = p.getString("value")
         val mode         = p.getString("mode", "date")
-        val display      = p.getString("display", "compact")
+        val display      = p.getString("picker_style", "compact")
         val label        = p.getString("label")
         val placeholder  = p.getString("placeholder")
         val title        = p.getString("title")

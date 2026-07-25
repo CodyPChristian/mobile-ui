@@ -130,9 +130,9 @@ it('accepts every documented mode', function (string $mode) {
     expect(pickerProps(DatePicker::make()->mode($mode))['mode'])->toBe($mode);
 })->with(DatePicker::MODES);
 
-it('accepts every documented display', function (string $display) {
-    expect(pickerProps(DatePicker::make()->display($display))['display'])->toBe($display);
-})->with(DatePicker::DISPLAYS);
+it('accepts every documented picker style', function (string $style) {
+    expect(pickerProps(DatePicker::make()->pickerStyle($style))['picker_style'])->toBe($style);
+})->with(DatePicker::PICKER_STYLES);
 
 it('accepts every documented hour format', function (string $format) {
     expect(pickerProps(DatePicker::make()->hourFormat($format))['hour_format'])->toBe($format);
@@ -142,9 +142,18 @@ it('rejects an unknown mode', function () {
     DatePicker::make()->mode('century');
 })->throws(InvalidArgumentException::class, 'mode');
 
-it('rejects an unknown display', function () {
-    DatePicker::make()->display('carousel');
-})->throws(InvalidArgumentException::class, 'display');
+it('rejects an unknown picker style', function () {
+    DatePicker::make()->pickerStyle('carousel');
+})->throws(InvalidArgumentException::class, 'picker-style');
+
+it('keeps pickerStyle clear of the base element layout display', function () {
+    // `Element::display(int)` is flex/layout display — a different axis.
+    // Setting one must not disturb the other.
+    $props = pickerProps(DatePicker::make()->pickerStyle('inline'));
+
+    expect($props['picker_style'])->toBe('inline');
+    expect($props)->not->toHaveKey('display');
+});
 
 it('rejects an unknown hour format', function () {
     DatePicker::make()->hourFormat('36');
@@ -190,7 +199,7 @@ it('applies kebab-case attributes from Blade', function () {
         'value' => '2026-07-25T09:00',
         'min' => '2026-07-01T00:00',
         'max' => '2026-07-31T23:59',
-        'display' => 'inline',
+        'picker-style' => 'inline',
         'timezone' => 'Europe/Berlin',
         'locale' => 'de-DE',
         'hour-format' => '24',
@@ -206,7 +215,7 @@ it('applies kebab-case attributes from Blade', function () {
     expect($props['value'])->toBe('2026-07-25T09:00');
     expect($props['min'])->toBe('2026-07-01T00:00');
     expect($props['max'])->toBe('2026-07-31T23:59');
-    expect($props['display'])->toBe('inline');
+    expect($props['picker_style'])->toBe('inline');
     expect($props['timezone'])->toBe('Europe/Berlin');
     expect($props['locale'])->toBe('de-DE');
     expect($props['hour_format'])->toBe('24');

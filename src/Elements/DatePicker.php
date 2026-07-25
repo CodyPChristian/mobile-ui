@@ -58,7 +58,7 @@ class DatePicker extends Element
      *   inline   →  iOS `.graphical` (embedded calendar) · Android embedded picker
      *   wheel    →  iOS `.wheel` (drum) · Android has no drum; falls back to inline
      */
-    public const DISPLAYS = ['compact', 'inline', 'wheel'];
+    public const PICKER_STYLES = ['compact', 'inline', 'wheel'];
 
     /** Clock convention. `auto` defers to the resolved locale. */
     public const HOUR_FORMATS = ['auto', '12', '24'];
@@ -111,8 +111,9 @@ class DatePicker extends Element
         if (isset($attrs['placeholder'])) {
             $this->placeholder((string) $attrs['placeholder']);
         }
-        if (isset($attrs['display'])) {
-            $this->display((string) $attrs['display']);
+        $pickerStyle = $attrs['picker-style'] ?? $attrs['pickerStyle'] ?? null;
+        if ($pickerStyle !== null) {
+            $this->pickerStyle((string) $pickerStyle);
         }
         if (isset($attrs['timezone'])) {
             $this->timezone((string) $attrs['timezone']);
@@ -211,10 +212,16 @@ class DatePicker extends Element
         return $this;
     }
 
-    /** `compact` (default), `inline`, or `wheel` — see [self::DISPLAYS]. */
-    public function display(string $display): static
+    /**
+     * `compact` (default), `inline`, or `wheel` — see [self::PICKER_STYLES].
+     *
+     * Named `pickerStyle` rather than `display` because `Element::display()`
+     * is already taken by flex/layout display, which is a different axis
+     * entirely.
+     */
+    public function pickerStyle(string $style): static
     {
-        $this->pickerProps['display'] = $this->oneOf($display, self::DISPLAYS, 'display');
+        $this->pickerProps['picker_style'] = $this->oneOf($style, self::PICKER_STYLES, 'picker-style');
 
         return $this;
     }

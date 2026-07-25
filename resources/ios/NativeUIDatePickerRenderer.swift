@@ -38,7 +38,7 @@ struct NativeUIDatePickerRenderer: View {
         let p = node.props
         let serverValue = p.getString("value")
         let mode        = p.getString("mode", default: "date")
-        let display     = p.getString("display", default: "compact")
+        let display     = p.getString("picker_style", default: "compact")
         let label       = p.getString("label")
         let placeholder = p.getString("placeholder")
         let minRaw      = p.getString("min")
