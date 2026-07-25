@@ -74,8 +74,9 @@ struct NativeUIStackLayout: Layout {
 
             // Absolute children pin to the stack's edges by inset — the
             // docs-blessed "layer a badge over an icon" pattern. Same anchor
-            // convention as FlexContainer.placeAbsolute: a positive right /
-            // bottom inset (with zero left/top) anchors to that edge.
+            // convention as FlexContainer.placeAbsolute: a NON-ZERO right /
+            // bottom inset (with zero left/top) anchors to that edge, and a
+            // negative one deliberately overhangs it (`-right-8` bleed).
             if layout?.positionType == PositionType.absolute {
                 let top = CGFloat(layout?.positionTop ?? 0)
                 let right = CGFloat(layout?.positionRight ?? 0)
@@ -83,11 +84,11 @@ struct NativeUIStackLayout: Layout {
                 let left = CGFloat(layout?.positionLeft ?? 0)
 
                 var x = bounds.minX + left
-                if right > 0 && left == 0 {
+                if right != 0 && left == 0 {
                     x = bounds.maxX - width - right
                 }
                 var y = bounds.minY + top
-                if bottom > 0 && top == 0 {
+                if bottom != 0 && top == 0 {
                     y = bounds.maxY - height - bottom
                 }
 
