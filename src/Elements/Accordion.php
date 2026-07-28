@@ -11,6 +11,8 @@ class Accordion extends Element
 
     protected array $props = [];
 
+    protected ?string $changeCallback = null;
+
     public static function make(Element ...$children): static
     {
         $el = new static;
@@ -35,8 +37,21 @@ class Accordion extends Element
         return $this;
     }
 
+    public function onChange(string $method): static
+    {
+        $this->changeCallback = $method;
+
+        return $this;
+    }
+
     protected function resolveProps(CallbackRegistry $registry): array
     {
-        return $this->props;
+        $props = $this->props;
+
+        if ($this->changeCallback !== null) {
+            $props['on_change'] = $registry->register($this->changeCallback);
+        }
+
+        return $props;
     }
 }

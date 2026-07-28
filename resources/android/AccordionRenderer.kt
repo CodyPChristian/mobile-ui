@@ -1,6 +1,7 @@
 package com.nativephp.plugins.native_ui.ui
 
 import androidx.compose.runtime.Composable
+import com.nativephp.mobile.ui.nativerender.NativeUIBridge
 import com.nativephp.mobile.ui.nativerender.NativeUINode
 import com.nativephp.mobile.ui.nativerender.NodeView
 import com.nativephp.plugins.native_ui.NativeUITheme
@@ -20,10 +21,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.padding
 import androidx.compose.animation.animateContentSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
@@ -33,11 +32,24 @@ import androidx.compose.ui.draw.rotate
 object AccordionRenderer {
     @Composable
     fun Render(node: NativeUINode, modifier: Modifier) {
-        var expanded by remember { mutableStateOf(node.props.getBool("expanded")) }
+        val p = node.props
+        val serverValue = p.getBool("expanded")
+        val onChangeCb  = p.getCallbackId("on_change")
+
+        var isExpanded by remember { mutableStateOf(p.getBool("expanded")) }
+        var lastSentValue by remember(node.id) { mutableStateOf(serverValue) }
+
         val rotationAngle by animateFloatAsState(
-            targetValue = if (expanded) 180f else 0f,
+            targetValue = if (isExpanded) 180f else 0f,
             label = "Chevron Rotation"
         )
+
+        LaunchedEffect(serverValue) {
+            if (serverValue != lastSentValue) {
+                isExpanded = serverValue
+                lastSentValue = serverValue
+            }
+        }
 
         Column(
             modifier = Modifier
@@ -50,7 +62,14 @@ object AccordionRenderer {
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null
-                    ) { expanded = !expanded },
+                    ) {
+                        val new = !isExpanded
+                        isExpanded = new
+                        lastSentValue = new
+                        if (onChangeCb != 0) {
+                            NativeUIBridge.sendToggleChangeEvent(onChangeCb, node.id, new)
+                        }
+                    },
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 node.children.forEach { child ->
@@ -59,7 +78,16 @@ object AccordionRenderer {
                     }
                 }
 
-                IconButton(modifier = Modifier.then(Modifier.size(24.dp)), onClick = { expanded = !expanded }) {
+                IconButton(modifier = Modifier.then(Modifier.size(24.dp)),
+                    onClick = {
+                        val new = !isExpanded
+                        isExpanded = new
+                        lastSentValue = new
+                        if (onChangeCb != 0) {
+                            NativeUIBridge.sendToggleChangeEvent(onChangeCb, node.id, new)
+                        }
+                    }
+                ) {
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
                         contentDescription = null,
@@ -68,7 +96,7 @@ object AccordionRenderer {
                 }
             }
 
-            AnimatedVisibility(visible = expanded) {
+            AnimatedVisibility(visible = isExpanded) {
                 node.children.forEach { child ->
                     if (child.type == "accordion_content") {
                         child.children.forEach { child1 -> NodeView(node = child1) }
