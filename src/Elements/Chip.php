@@ -52,8 +52,13 @@ class Chip extends Element
         if (isset($attrs['value'])) {
             $this->selected((bool) $attrs['value']);
         }
-        if (isset($attrs['icon'])) {
-            $this->icon($attrs['icon']);
+        // `:ios-icon` / `:android-icon` (with `<icon>`-style `:ios` /
+        // `:android` as aliases), matching the core elements.
+        $iosIcon = $attrs['ios-icon'] ?? $attrs['iosIcon'] ?? $attrs['ios'] ?? null;
+        $androidIcon = $attrs['android-icon'] ?? $attrs['androidIcon'] ?? $attrs['android'] ?? null;
+
+        if (isset($attrs['icon']) || $iosIcon !== null || $androidIcon !== null) {
+            $this->icon($attrs['icon'] ?? null, $iosIcon, $androidIcon);
         }
         if (! empty($attrs['disabled'])) {
             $this->disabled();
