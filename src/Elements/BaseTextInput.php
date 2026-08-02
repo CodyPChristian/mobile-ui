@@ -102,11 +102,20 @@ abstract class BaseTextInput extends Element
         if (isset($attrs['suffix'])) {
             $this->suffix($attrs['suffix']);
         }
-        if (isset($attrs['leading-icon']) || isset($attrs['leadingIcon'])) {
-            $this->leadingIcon($attrs['leading-icon'] ?? $attrs['leadingIcon']);
+        $leadingIcon = $attrs['leading-icon'] ?? $attrs['leadingIcon'] ?? null;
+        $leadingIconIos = $attrs['leading-icon-ios'] ?? $attrs['leadingIconIos'] ?? null;
+        $leadingIconAndroid = $attrs['leading-icon-android'] ?? $attrs['leadingIconAndroid'] ?? null;
+
+        if ($leadingIcon !== null || $leadingIconIos !== null || $leadingIconAndroid !== null) {
+            $this->leadingIcon($leadingIcon, $leadingIconIos, $leadingIconAndroid);
         }
-        if (isset($attrs['trailing-icon']) || isset($attrs['trailingIcon'])) {
-            $this->trailingIcon($attrs['trailing-icon'] ?? $attrs['trailingIcon']);
+
+        $trailingIcon = $attrs['trailing-icon'] ?? $attrs['trailingIcon'] ?? null;
+        $trailingIconIos = $attrs['trailing-icon-ios'] ?? $attrs['trailingIconIos'] ?? null;
+        $trailingIconAndroid = $attrs['trailing-icon-android'] ?? $attrs['trailingIconAndroid'] ?? null;
+
+        if ($trailingIcon !== null || $trailingIconIos !== null || $trailingIconAndroid !== null) {
+            $this->trailingIcon($trailingIcon, $trailingIconIos, $trailingIconAndroid);
         }
 
         // Size + a11y
