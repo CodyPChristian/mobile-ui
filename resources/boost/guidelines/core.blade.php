@@ -89,16 +89,20 @@ paths serialize to the same wire tree.
   (iOS registers them by PostScript name, Android loads from `assets/fonts/`);
   an unresolved name falls back to the system font. Font size/weight still come
   from `text-*` / `font-*` classes and the theme.
-- **Downloading fonts.** `php artisan native:font Lobster` (or `"Rock Salt"`,
-  multiple families, `--weights=400,700`, `--italic`) downloads Google Fonts
-  into `resources/fonts/` with ready-to-use token names — no API key.
+- **Downloading fonts.** `php artisan native:font Lobster` (or
+  `native:font "Rock Salt"`) downloads one Google Fonts family into
+  `resources/fonts/` with ready-to-use token names — no API key. Interactively
+  pick styles; non-interactively only Regular is fetched when available.
+  Useful flags: `--default` (set as app-wide default), `--force` (overwrite
+  files / skip reset confirm), `--clear-cache`, `--reset` (wipe bundled fonts
+  when present and restore `fonts.default` to `System`).
 - **Font aliases + app-wide default.** Name fonts semantically in
   `config/native-ui.php`: `'fonts' => ['default' => 'Inter-Regular',
   'accent' => 'DynaPuff-Regular']`. Use an alias anywhere a font token works
   (`font="accent"`, chrome `->font()`, layout `$font`); the `default` alias
   applies app-wide (superseding the older `font-family` token). Per-element
   `font` attributes and `font-serif`/`font-mono` classes still win over the
-  default. `native:font --default` sets it for you.
+  default. `native:font Inter --default` sets it for you.
 - **Line height (leading).** `leading-none|tight|snug|normal|relaxed|loose`
   (unitless multipliers of the font size), plus arbitrary `leading-[1.4]`
   (multiplier) and `leading-[24px]` (absolute). Applies to `<native:text>` and
