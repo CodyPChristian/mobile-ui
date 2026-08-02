@@ -429,8 +429,8 @@ Run from the app:
 
 ```bash
 git -C ../mobile-ui switch --detach 0.3.0
-php84 artisan native:install ios --force --no-interaction
-php84 artisan native:run ios --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:install ios --force --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:run ios --no-interaction
 mkdir -p docs/evidence/text-input-platform-icons
 xcrun simctl io booted screenshot docs/evidence/text-input-platform-icons/released-ios.png
 ```
@@ -442,8 +442,8 @@ Inspect the screenshot. Required observation: the Blade input has no leading ico
 Run:
 
 ```bash
-php84 artisan native:install android --force --no-interaction
-php84 artisan native:run android --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:install android --force --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:run android --no-interaction
 adb exec-out screencap -p > docs/evidence/text-input-platform-icons/released-android.png
 ```
 
@@ -464,8 +464,8 @@ Verify with `git -C ../mobile-ui status --short --branch`. Do not leave the pack
 Run:
 
 ```bash
-php84 artisan native:install ios --force --no-interaction
-php84 artisan native:run ios --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:install ios --force --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:run ios --no-interaction
 xcrun simctl io booted screenshot docs/evidence/text-input-platform-icons/fixed-ios.png
 ```
 
@@ -476,8 +476,8 @@ Inspect the screenshot. Required observation: both inputs show the envelope icon
 Run:
 
 ```bash
-php84 artisan native:install android --force --no-interaction
-php84 artisan native:run android --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:install android --force --no-interaction
+NATIVEPHP_START_URL=/demos/text-input-platform-icons php84 artisan native:run android --no-interaction
 adb exec-out screencap -p > docs/evidence/text-input-platform-icons/fixed-android.png
 ```
 
