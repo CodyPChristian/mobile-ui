@@ -18,11 +18,28 @@ paths serialize to the same wire tree.
   Use `.live` / `.blur` / `.debounce.Xms` modifiers to control sync frequency.
 - Wire callbacks with event attributes (`@tap`, `@change`, `@submit`,
   `@dismiss`) pointing at public methods on the component.
+- `<native:date-picker>` handles dates, times, and both. Set `mode` to
+  `date` (default), `time`, or `datetime`. Values are always wall-clock ISO
+  strings — `2026-07-25`, `14:30`, `2026-07-25T14:30` — never offsets or
+  epoch numbers, so they feed straight into `Carbon::parse()`. `value`,
+  `min`, and `max` also accept any `DateTimeInterface`.
+- On the picker, `timezone` (IANA) names the calendar the user picks in and
+  never rewrites the value; `locale` (BCP-47) is display-only. Use
+  `picker-style` = `compact` (default) / `inline` / `wheel` (NOT `display`,
+  which is flex/layout display). `title`,
+  `confirm-label`, and `cancel-label` are Android-only dialog chrome — pass
+  translated strings. `min`/`max` are NOT supported for `mode="time"` (they
+  throw), and sync-mode modifiers (`native:model.blur`) throw too — a picker
+  always commits on selection.
+- In tests, drive pickers with the `pickDate()` / `pickTime()` /
+  `pickDateTime()` / `clearPicker()` macros and assert with
+  `assertPicker()` / `assertPickerValue()` / `assertPickerEmpty()`.
 
 @verbatim
 <code-snippet name="Declaring native elements in Blade" lang="blade">
 <native:column class="gap-4 p-4">
     <native:outlined-text-input label="Email" native:model.blur="email" />
+    <native:date-picker label="Starts" mode="datetime" native:model="startsAt" />
     <native:toggle label="Notifications" native:model="notify" />
     <native:button variant="primary" @tap="save">Save</native:button>
 </native:column>
