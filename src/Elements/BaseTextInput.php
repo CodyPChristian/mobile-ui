@@ -112,11 +112,24 @@ abstract class BaseTextInput extends Element
         if (isset($attrs['suffix'])) {
             $this->suffix($attrs['suffix']);
         }
-        if (isset($attrs['leading-icon']) || isset($attrs['leadingIcon'])) {
-            $this->leadingIcon($attrs['leading-icon'] ?? $attrs['leadingIcon']);
+        // Platform icon overrides follow the core/Button convention: the
+        // platform prefixes the shared attribute name (`ios-leading-icon` /
+        // `android-trailing-icon`), mirroring `icon` → `ios-icon` and
+        // `icon-trailing` → `ios-icon-trailing` on Button.
+        $leadingIcon = $attrs['leading-icon'] ?? $attrs['leadingIcon'] ?? null;
+        $leadingIconIos = $attrs['ios-leading-icon'] ?? $attrs['iosLeadingIcon'] ?? null;
+        $leadingIconAndroid = $attrs['android-leading-icon'] ?? $attrs['androidLeadingIcon'] ?? null;
+
+        if ($leadingIcon !== null || $leadingIconIos !== null || $leadingIconAndroid !== null) {
+            $this->leadingIcon($leadingIcon, $leadingIconIos, $leadingIconAndroid);
         }
-        if (isset($attrs['trailing-icon']) || isset($attrs['trailingIcon'])) {
-            $this->trailingIcon($attrs['trailing-icon'] ?? $attrs['trailingIcon']);
+
+        $trailingIcon = $attrs['trailing-icon'] ?? $attrs['trailingIcon'] ?? null;
+        $trailingIconIos = $attrs['ios-trailing-icon'] ?? $attrs['iosTrailingIcon'] ?? null;
+        $trailingIconAndroid = $attrs['android-trailing-icon'] ?? $attrs['androidTrailingIcon'] ?? null;
+
+        if ($trailingIcon !== null || $trailingIconIos !== null || $trailingIconAndroid !== null) {
+            $this->trailingIcon($trailingIcon, $trailingIconIos, $trailingIconAndroid);
         }
 
         // Size + a11y
