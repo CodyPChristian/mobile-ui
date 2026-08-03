@@ -20,8 +20,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUINode
 import com.nativephp.plugins.native_ui.NativeUITheme
@@ -43,15 +45,10 @@ object FilledTextInputRenderer {
         val theme = if (isSystemInDarkTheme()) NativeUITheme.dark else NativeUITheme.light
         val scope = rememberCoroutineScope()
 
-        var text by remember { mutableStateOf(props.serverValue) }
+        // Local state owns text + caret (TextFieldValue). Initial caret sits at
+        // the end of any pre-filled value, matching the server-push below.
+        var value by remember { mutableStateOf(TextFieldValue(props.serverValue, TextRange(props.serverValue.length))) }
         var lastSentValue by remember { mutableStateOf(props.serverValue) }
-
-        LaunchedEffect(props.serverValue) {
-            if (props.serverValue != lastSentValue) {
-                text = props.serverValue
-                lastSentValue = props.serverValue
-            }
-        }
 
         val dispatcher = remember(props.syncMode, props.debounceMs, props.onChangeCb) {
             TextInputDispatcher(
@@ -63,6 +60,24 @@ object FilledTextInputRenderer {
             )
         }
 
+        // Caret / selection reporter — independent of the sync-mode dispatcher;
+        // no-op unless `on_selection_change` is wired and the field isn't secure.
+        val selectionReporter = remember(props.onSelectionChangeCb, props.selectionDebounceMs, props.secure) {
+            SelectionReporter(scope = scope, props = props, nodeId = node.id)
+        }
+
+        LaunchedEffect(props.serverValue) {
+            if (props.serverValue != lastSentValue) {
+                // Programmatic server push: replace text, caret to the end, and
+                // flush a single end-caret selection event (deduped) rather
+                // than emitting stale pre-push offsets.
+                val pushed = TextFieldValue(props.serverValue, TextRange(props.serverValue.length))
+                value = pushed
+                lastSentValue = props.serverValue
+                selectionReporter.flush(pushed)
+            }
+        }
+
         val interactionSource = remember { MutableInteractionSource() }
         LaunchedEffect(interactionSource) {
             val focusStack = mutableListOf<FocusInteraction.Focus>()
@@ -71,7 +86,11 @@ object FilledTextInputRenderer {
                     is FocusInteraction.Focus   -> focusStack += interaction
                     is FocusInteraction.Unfocus -> {
                         focusStack.remove(interaction.focus)
-                        if (focusStack.isEmpty()) dispatcher.onBlur(text)
+                        if (focusStack.isEmpty()) {
+                            // Flush the pending selection, then any deferred text.
+                            selectionReporter.flush(value)
+                            dispatcher.onBlur(value.text)
+                        }
                     }
                     else -> { /* ignore */ }
                 }
@@ -88,11 +107,19 @@ object FilledTextInputRenderer {
         val lineHeight = nuiLineHeightUnit(props.lineHeightPx, props.lineHeight, textSize.value)
 
         TextField(
-            value = text,
+            value = value,
             onValueChange = { new ->
-                val filtered = if (props.maxLength > 0) new.take(props.maxLength) else new
-                text = filtered
-                dispatcher.onTextChanged(filtered)
+                // maxLength now also clamps the caret/selection into the
+                // trimmed text (see `cappedTo`).
+                val capped = new.cappedTo(props.maxLength)
+                val textChanged = capped.text != value.text
+                value = capped
+                // Only forward *text* changes to the model dispatcher — the
+                // String overload never invoked onValueChange for caret-only
+                // moves, so selection-only updates must not re-fire change
+                // events. Text-change dispatch still receives the plain String.
+                if (textChanged) dispatcher.onTextChanged(capped.text)
+                selectionReporter.onValueChanged(capped)
             },
             // Full width by default (parity with the iOS renderer's
             // maxWidth: .infinity); an explicit width in `modifier` (FIXED
@@ -116,7 +143,11 @@ object FilledTextInputRenderer {
             minLines = props.minLines,
             visualTransformation = props.visualTransformation,
             keyboardOptions = keyboardOptionsFor(props),
-            keyboardActions = KeyboardActions(onDone = { dispatcher.onSubmit(text) }),
+            keyboardActions = KeyboardActions(onDone = {
+                // Flush the settled caret before the submit event fires.
+                selectionReporter.flush(value)
+                dispatcher.onSubmit(value.text)
+            }),
             textStyle = TextStyle(fontSize = textSize, color = theme.onSurface, fontFamily = customFontFamily, lineHeight = lineHeight),
             colors = TextFieldDefaults.colors(
                 focusedTextColor = theme.onSurface,

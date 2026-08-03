@@ -13,6 +13,8 @@ use Native\Mobile\UI\Elements\AccordionHeader;
 use Native\Mobile\UI\Elements\BareTextInput;
 use Native\Mobile\UI\Elements\Button;
 use Native\Mobile\UI\Elements\Checkbox;
+use Native\Mobile\UI\Elements\FilledTextInput;
+use Native\Mobile\UI\Elements\OutlinedTextInput;
 use Native\Mobile\UI\Elements\ProgressBar;
 use Native\Mobile\UI\Elements\Radio;
 use Native\Mobile\UI\Elements\RadioGroup;
@@ -31,6 +33,8 @@ beforeEach(function () {
     ElementRegistry::register('text', Text::class);
     ElementRegistry::register('button', Button::class);
     ElementRegistry::register('bare_text_input', BareTextInput::class);
+    ElementRegistry::register('outlined_text_input', OutlinedTextInput::class);
+    ElementRegistry::register('filled_text_input', FilledTextInput::class);
     ElementRegistry::register('toggle', Toggle::class);
     ElementRegistry::register('checkbox', Checkbox::class);
     ElementRegistry::register('progress_bar', ProgressBar::class);
@@ -104,6 +108,114 @@ it('applies bare text input props and callbacks', function () {
     expect($tree['props']['placeholder'])->toBe('Enter text...');
     expect($registry->resolve($tree['props']['on_change']))->toBe(['method' => 'onTextChange', 'args' => []]);
     expect($registry->resolve($tree['props']['on_submit']))->toBe(['method' => 'onTextSubmit', 'args' => []]);
+});
+
+// NOTE ON WHAT THIS COVERS: the assertion is that an element handed a
+// `_selectionChange` attr ends up with a `text_selection`-kinded callback. It
+// does NOT prove the core's collector routes `_selectionChange` →
+// `onSelectionChange()`, because `BaseTextInput::applyAttributes` self-wires
+// the same attr. Against the core this repo's CI builds against (which has the
+// precompiler half but not the collector half) the self-wire is what makes
+// this pass. Both paths are intentional; the collector path is covered by the
+// companion core PR's own suite.
+it('gives a _selectionChange attr a text_selection-kinded callback', function (string $type) {
+    NativeElementCollector::leaf($type, [
+        'value' => 'hello',
+        '_selectionChange' => 'onCaretMove',
+    ]);
+
+    $registry = new CallbackRegistry;
+    $tree = NativeElementCollector::collect()->toArray($registry);
+
+    expect($tree['type'])->toBe($type);
+    expect($tree['props']['on_selection_change'])->toBeInt();
+    expect($registry->resolve($tree['props']['on_selection_change']))->toBe(['method' => 'onCaretMove', 'args' => []]);
+    // The kind tag drives NativeComponent::dispatch's TEXT_CHANGE payload
+    // decode — (text, selectionStart, selectionEnd) handler args.
+    expect($registry->kind($tree['props']['on_selection_change']))->toBe('text_selection');
+})->with(['bare_text_input', 'outlined_text_input', 'filled_text_input']);
+
+it('serializes selection-debounce-ms only when set', function () {
+    NativeElementCollector::leaf('outlined_text_input', [
+        '_selectionChange' => 'onCaretMove',
+        'selection-debounce-ms' => 120,
+    ]);
+
+    $tree = NativeElementCollector::collect()->toArray(new CallbackRegistry);
+
+    expect($tree['props']['selection_debounce_ms'])->toBe(120);
+
+    // Absent attr → absent prop: the default window lives in the renderers,
+    // never serialized from PHP.
+    NativeElementCollector::reset();
+    NativeElementCollector::leaf('outlined_text_input', [
+        '_selectionChange' => 'onCaretMove',
+    ]);
+
+    $tree = NativeElementCollector::collect()->toArray(new CallbackRegistry);
+
+    expect($tree['props'])->not->toHaveKey('selection_debounce_ms');
+});
+
+it('accepts the camelCase selectionDebounceMs attribute', function () {
+    NativeElementCollector::leaf('filled_text_input', [
+        'selectionDebounceMs' => '75',
+    ]);
+
+    $tree = NativeElementCollector::collect()->toArray(new CallbackRegistry);
+
+    expect($tree['props']['selection_debounce_ms'])->toBe(75);
+});
+
+it('never serializes a selection callback for a secure input', function (string $type) {
+    // Privacy invariant, enforced at the source rather than restated in every
+    // renderer: a secure field must not ship caret offsets, so the callback id
+    // is never registered and the native side has nothing to emit against.
+    NativeElementCollector::leaf($type, [
+        'secure' => true,
+        '_selectionChange' => 'onCaretMove',
+        'selection-debounce-ms' => 120,
+    ]);
+
+    $tree = NativeElementCollector::collect()->toArray(new CallbackRegistry);
+
+    expect($tree['props'])->not->toHaveKey('on_selection_change');
+    // The other callbacks on a secure field are untouched.
+    expect($tree['props']['secure'])->toBeTrue();
+})->with(['bare_text_input', 'outlined_text_input', 'filled_text_input']);
+
+it('suppresses the selection callback for a secure input via the fluent API', function () {
+    $registry = new CallbackRegistry;
+    $props = OutlinedTextInput::make()
+        ->onSelectionChange('trackCaret')
+        ->secure()
+        ->toArray($registry)['props'];
+
+    expect($props)->not->toHaveKey('on_selection_change');
+});
+
+it('still serializes the selection callback when secure is explicitly false', function () {
+    $registry = new CallbackRegistry;
+    $props = OutlinedTextInput::make()
+        ->onSelectionChange('trackCaret')
+        ->secure(false)
+        ->toArray($registry)['props'];
+
+    expect($props['on_selection_change'])->toBeInt();
+    expect($registry->kind($props['on_selection_change']))->toBe('text_selection');
+});
+
+it('registers selection change via the fluent API', function () {
+    $registry = new CallbackRegistry;
+    $props = OutlinedTextInput::make()
+        ->onSelectionChange('trackCaret')
+        ->selectionDebounceMs(200)
+        ->toArray($registry)['props'];
+
+    expect($props['on_selection_change'])->toBeInt();
+    expect($registry->resolve($props['on_selection_change']))->toBe(['method' => 'trackCaret', 'args' => []]);
+    expect($registry->kind($props['on_selection_change']))->toBe('text_selection');
+    expect($props['selection_debounce_ms'])->toBe(200);
 });
 
 it('applies toggle props', function () {

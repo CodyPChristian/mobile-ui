@@ -18,6 +18,16 @@ paths serialize to the same wire tree.
   Use `.live` / `.blur` / `.debounce.Xms` modifiers to control sync frequency.
 - Wire callbacks with event attributes (`@tap`, `@change`, `@submit`,
   `@dismiss`) pointing at public methods on the component.
+- Text inputs also take `@selectionChange` for caret / selection reporting:
+  the handler is called as `method(string $text, int $selectionStart, int
+  $selectionEnd)` with offsets in Unicode code points (`start === end` for a
+  plain caret). Events are coalesced natively (150ms default; tune with
+  `selection-debounce-ms`). Never fired on `secure` inputs. Use it for
+  typeahead / mention triggers where `@change` can't tell you *where* the
+  user is typing.
+- Each `@selectionChange` event carries the FULL current text and costs a
+  component re-render, independent of the `native:model` sync mode — don't
+  reach for it when plain `@change` would do.
 - `<native:date-picker>` handles dates, times, and both. Set `mode` to
   `date` (default), `time`, or `datetime`. Values are always wall-clock ISO
   strings — `2026-07-25`, `14:30`, `2026-07-25T14:30` — never offsets or
@@ -39,6 +49,7 @@ paths serialize to the same wire tree.
 <code-snippet name="Declaring native elements in Blade" lang="blade">
 <native:column class="gap-4 p-4">
     <native:outlined-text-input label="Email" native:model.blur="email" />
+    <native:outlined-text-input label="Message" native:model="message" @selectionChange="onCaretMove" />
     <native:date-picker label="Starts" mode="datetime" native:model="startsAt" />
     <native:toggle label="Notifications" native:model="notify" />
     <native:button variant="primary" @tap="save">Save</native:button>
