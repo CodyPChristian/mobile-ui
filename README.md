@@ -132,14 +132,37 @@ OutlinedTextInput::make()
     ->selectionDebounceMs(100);
 ```
 
-Events are coalesced on the native side — by default at most one every **50ms**
+Events are coalesced on the native side — by default at most one every **150ms**
 while the caret moves (the trailing position always fires). Tune the window per
 input with `selection-debounce-ms` / `selectionDebounceMs` (fluent:
 `->selectionDebounceMs()`); when unset, nothing is serialized and the renderer
-default of 50ms applies.
+default applies. A value of `0` (or less) also means "use the default"; positive
+values are floored at one frame (16ms).
 
-`@selectionChange` is never emitted for `secure` inputs — the renderers
-suppress it so caret telemetry can't leak password-field context.
+> **Every event carries the full current text**, and every event costs a bridge
+> frame plus a full component re-render. That is independent of the
+> `native:model` sync mode: pairing `@selectionChange` with `native:model.blur`
+> or `.debounce` still ships the field contents to PHP on the selection
+> cadence, not the model cadence. Budget the debounce window accordingly.
+
+`@selectionChange` is never emitted for `secure` inputs. The callback is not
+serialized at all when `secure` is set, and both renderers additionally refuse
+to emit — so caret telemetry can't leak password-field context.
+
+### Contract details
+
+- **Programmatic value pushes.** When PHP pushes a new `value` onto the input,
+  the field is replaced wholesale and the caret drops at the end. Both platforms
+  report that immediately as a single `(text, length, length)` event, bypassing
+  the debounce. A handler that rewrites the bound model will therefore see one
+  follow-up event.
+- **Discontiguous selections** (multi-range, iOS) are reported as a single span
+  from the lowest start to the highest end — the reported range covers the gaps,
+  so `mb_substr($text, $start, $end - $start)` includes text the user did not
+  select.
+- **`read-only` inputs** report selection on Android (which keeps them focusable
+  for copy) but not on iOS (where read-only implies disabled, so the field never
+  focuses).
 
 A typical use is typeahead / mention triggers, where `@change` alone can't tell
 you *where* the user is typing:

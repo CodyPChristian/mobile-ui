@@ -21,10 +21,13 @@ paths serialize to the same wire tree.
 - Text inputs also take `@selectionChange` for caret / selection reporting:
   the handler is called as `method(string $text, int $selectionStart, int
   $selectionEnd)` with offsets in Unicode code points (`start === end` for a
-  plain caret). Events are coalesced natively (50ms default; tune with
+  plain caret). Events are coalesced natively (150ms default; tune with
   `selection-debounce-ms`). Never fired on `secure` inputs. Use it for
   typeahead / mention triggers where `@change` can't tell you *where* the
   user is typing.
+- Each `@selectionChange` event carries the FULL current text and costs a
+  component re-render, independent of the `native:model` sync mode — don't
+  reach for it when plain `@change` would do.
 
 @verbatim
 <code-snippet name="Declaring native elements in Blade" lang="blade">

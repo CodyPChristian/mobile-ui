@@ -68,7 +68,12 @@ struct NativeUITextInputCore: View {
         // Selection reporting is opt-in (0/absent ⇒ off) and never applies to
         // secure fields. Read exactly like `on_change` / `debounce_ms` above.
         let onSelectionCb = p.getCallbackId("on_selection_change")
-        let selDebounceMs = p.getInt("selection_debounce_ms", default: 50)
+        // PHP only serializes this prop when explicitly configured, so an
+        // absent prop and an explicit 0 are indistinguishable — both mean
+        // "use the default". Positive values are floored at one frame.
+        // Android resolves the same prop identically (`TextInputShared.kt`) —
+        // keep the two in sync.
+        let selDebounceMs = Self.resolveSelectionDebounceMs(p.getInt("selection_debounce_ms"))
         let selectionEnabled = onSelectionCb != 0 && !secure
         let fontName      = p.getString("font_name")
         let lineSpacing   = NativeUIFontResolver.lineSpacing(
@@ -151,6 +156,18 @@ struct NativeUITextInputCore: View {
             if newServerValue != lastSentValue {
                 text = newServerValue
                 lastSentValue = newServerValue
+                // A programmatic push replaces the field wholesale and drops
+                // the caret at the end. Report that immediately, regardless of
+                // focus — matching the Android renderers, which flush the same
+                // end-caret event from their value-sync effect. Without this,
+                // a handler that rewrites the bound model (the mention-
+                // typeahead case) sees a follow-up event on Android and
+                // nothing on iOS. Emitting here also beats letting the
+                // `.onChange(of: text)` path below fire with the STALE cached
+                // offsets clamped to the new length.
+                if selectionEnabled {
+                    emitServerPushSelection(text: newServerValue, cb: onSelectionCb)
+                }
                 // Send-BUTTON path (no `onSubmit`): a send clears the draft to
                 // empty. Keep the keyboard up by re-asserting focus. Opt-in via
                 // `keep-focus-on-submit`; only on a clear-to-empty so ordinary
@@ -304,12 +321,46 @@ struct NativeUITextInputCore: View {
     ///
     /// Scalar count — NOT grapheme count — so a skin-toned 👍🏽 (2 scalars) or a
     /// combining "e"+◌́ (2 scalars) advances the offset by 2, matching the
-    /// pinned contract. The defensive clamp keeps a momentarily-stale index from
-    /// trapping `distance`; on the normal path it's a no-op.
+    /// pinned contract.
+    ///
+    /// The clamp bounds a momentarily-stale index to `startIndex...endIndex`;
+    /// it does NOT guarantee scalar ALIGNMENT (an index pointing into the
+    /// middle of a multi-byte sequence stays misaligned). Swift rounds rather
+    /// than traps when measuring distance to a misaligned index in the scalar
+    /// view, so the worst case is an off-by-one offset, not a crash. On the
+    /// normal path — indices SwiftUI just derived from this same string — the
+    /// clamp is a no-op.
     private func scalarOffset(of index: String.Index, in string: String) -> Int {
         let scalars = string.unicodeScalars
         let clamped = min(max(index, string.startIndex), string.endIndex)
         return scalars.distance(from: scalars.startIndex, to: clamped)
+    }
+
+    /// Default coalescing window for `@selectionChange`, in ms.
+    private static let selectionDebounceDefaultMs = 150
+
+    /// Lower bound for an explicitly configured window — one frame at 60fps.
+    private static let selectionDebounceFloorMs = 16
+
+    /// Resolve `selection_debounce_ms` to an effective window. `<= 0` (which
+    /// includes "prop absent", since PHP only serializes it when configured)
+    /// means the default; positive values are floored at one frame, because
+    /// every emission costs a bridge frame plus a full PHP component
+    /// re-render.
+    private static func resolveSelectionDebounceMs(_ raw: Int) -> Int {
+        raw > 0 ? max(raw, selectionDebounceFloorMs) : selectionDebounceDefaultMs
+    }
+
+    /// Report an end-of-text caret for a programmatic value push, bypassing
+    /// the debounce. Sets the cached offsets first so the `.onChange(of: text)`
+    /// pass that follows recomputes the identical payload and is dropped by
+    /// the dedupe rather than emitting stale offsets.
+    private func emitServerPushSelection(text pushedText: String, cb: Int) {
+        let count = pushedText.unicodeScalars.count
+        selStart = count
+        selEnd = count
+        pendingSelection = NativeUISelectionPayload(text: pushedText, start: count, end: count)
+        flushSelection(cb: cb)
     }
 
     /// (Re)arm the trailing-edge debounce. Recomputes the payload from the

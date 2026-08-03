@@ -130,9 +130,30 @@ internal fun parseTextInputProps(node: NativeUINode): TextInputProps {
         onSelectionChangeCb = p.getCallbackId("on_selection_change"),
         syncMode     = parseSyncMode(p.getString("sync_mode", "live")),
         debounceMs   = p.getInt("debounce_ms").let { if (it > 0) it else 300 },
-        selectionDebounceMs = p.getInt("selection_debounce_ms").let { if (it > 0) it else 50 },
+        selectionDebounceMs = resolveSelectionDebounceMs(p.getInt("selection_debounce_ms")),
     )
 }
+
+/**
+ * Resolve `selection_debounce_ms` to an effective window. PHP only serializes
+ * the prop when explicitly configured, so an absent prop and an explicit `0`
+ * are indistinguishable here — both mean "use the default".
+ *
+ * Positive values are floored at one frame: every emission costs a bridge
+ * frame plus a full PHP component re-render, so a sub-frame window buys
+ * nothing and can saturate the bridge while the caret is dragged.
+ *
+ * iOS resolves the same prop identically ([NativeUITextInputCore.swift]) —
+ * keep the two in sync.
+ */
+internal fun resolveSelectionDebounceMs(raw: Int): Int =
+    if (raw > 0) raw.coerceAtLeast(NUI_SELECTION_DEBOUNCE_FLOOR_MS) else NUI_SELECTION_DEBOUNCE_DEFAULT_MS
+
+/** Default coalescing window for `@selectionChange`, in ms. */
+internal const val NUI_SELECTION_DEBOUNCE_DEFAULT_MS = 150
+
+/** Lower bound for an explicitly configured window — one frame at 60fps. */
+internal const val NUI_SELECTION_DEBOUNCE_FLOOR_MS = 16
 
 /** String hint → M3 KeyboardType. Unknown falls through to text. */
 internal fun resolveKeyboardType(kind: String): KeyboardType = when (kind.lowercase()) {
