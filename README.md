@@ -181,6 +181,144 @@ public function onCaretMove(string $text, int $start, int $end)
 }
 ```
 
+## Date & Time Pickers
+
+`<native:date-picker>` wraps SwiftUI's `DatePicker` and Material 3's
+`DatePicker` / `TimePicker` behind one API.
+
+```blade
+<native:date-picker
+    label="Appointment"
+    mode="datetime"
+    native:model="appointmentAt"
+    min="2026-01-01"
+    max="2026-12-31"
+    timezone="Europe/Berlin"
+    locale="de-DE"
+    @change="appointmentChanged"
+/>
+```
+
+```php
+use Native\Mobile\UI\Elements\DatePicker;
+
+DatePicker::make()
+    ->label('Appointment')
+    ->mode('datetime')
+    ->value($this->appointmentAt)   // string or any DateTimeInterface
+    ->min('2026-01-01')
+    ->timezone('Europe/Berlin')
+    ->locale('de-DE')
+    ->onChange('appointmentChanged');
+```
+
+### The value contract
+
+Values cross the bridge as **wall-clock ISO 8601 strings with no offset**,
+shaped by `mode`:
+
+| mode | wire value | example |
+|---|---|---|
+| `date` (default) | `Y-m-d` | `2026-07-25` |
+| `time` | `H:i`, always 24-hour | `14:30` |
+| `datetime` | `Y-m-d\TH:i` | `2026-07-25T14:30` |
+
+No UTC conversion ever crosses the bridge. That is deliberate: it is what
+keeps the classic off-by-one-day bug out of the element. Android's
+`DatePickerState` reports UTC-midnight epoch millis and SwiftUI's `DatePicker`
+binds an instant, so each renderer converts on its own side against one
+agreed calendar — neither ever ships an instant.
+
+`value`, `min`, and `max` accept an ISO string *or* any `DateTimeInterface`
+(Carbon included), and a value finer than the mode needs is truncated — so a
+`datetime` column can drive a date-only picker without reformatting:
+
+```php
+->mode('date')->value('2026-07-25T14:30:59Z')   // serializes as 2026-07-25
+```
+
+An empty string clears the selection; an unparseable one throws.
+
+### Timezones and internationalization
+
+`timezone` takes an IANA identifier and names **the calendar the picker
+operates in** — what "today" means for an empty picker, and on iOS the
+calendar used to convert between the bound instant and the wall-clock string.
+It does *not* shift the wire value. Set it when your app pins a business
+timezone instead of following the device; leave it unset to follow the device.
+
+`locale` takes a BCP-47 tag and drives **display only** — month and weekday
+names, weekday order, and the default clock convention. It never changes the
+wire value, and the wire formatter is pinned to a Gregorian POSIX calendar so
+a Buddhist- or Japanese-era locale can't leak a non-Gregorian year onto the
+bridge.
+
+`hour-format` (`auto` | `12` | `24`) overrides the clock convention. `auto`
+resolves from the locale on **both** platforms — Android asks
+`getBestDateTimePattern(locale, "jm")` rather than reading the device's
+24-hour system setting, so the same `locale` gives the same result either
+side.
+
+### Display styles
+
+`picker-style` picks the presentation, mapped to the nearest native idiom.
+(It is not called `display` — that name is already flex/layout display on every
+element.)
+
+| `picker-style` | iOS | Android |
+|---|---|---|
+| `compact` (default) | `.compact` — tap to popover | trigger field + modal dialog |
+| `inline` | `.graphical` — embedded calendar | embedded picker |
+| `wheel` | `.wheel` — drum | **no drum in Material**; falls back to embedded |
+
+### Platform notes
+
+- `title`, `confirm-label`, and `cancel-label` are **Android only** — iOS
+  commits on selection and has no dialog chrome to label. They are still
+  user-visible strings, so pass translated values: `->confirmLabel(__('Done'))`.
+- On iOS with `picker-style="compact"` and no value, a placeholder trigger stands
+  in until first tap, because SwiftUI's compact picker always renders a
+  concrete date and has no empty state.
+- With `picker-style="inline"` and no initial value, neither platform commits the
+  seeded "today" — you get a change event only once the user actually picks.
+- `a11y-label` / `a11y-hint` are plumbed on both platforms; the current
+  selection is additionally announced as the control's accessibility value.
+- **`min` / `max` are rejected for `mode="time"`.** Neither platform can
+  enforce a time-of-day range — SwiftUI's `in:` bounds an absolute instant, and
+  Material 3's `TimePicker` has no bounds API — so passing them throws rather
+  than silently doing nothing. Validate the chosen time in your component.
+- **`picker-style="inline"` falls back to compact for `mode="time"` on iOS.**
+  SwiftUI's `.graphical` style is date-only. Android embeds the time picker as
+  asked.
+- **Sync-mode modifiers are rejected.** A picker commits discretely, so
+  `native:model.blur` / `native:model.debounce.300ms` have nothing to defer;
+  they throw. Use plain `native:model`.
+
+### Testing
+
+The plugin registers picker vocabulary on the test harness, so screens read in
+picker terms rather than raw select-change plumbing:
+
+```php
+Native::visit('/booking')
+    ->pickDate('startsOn', '2026-12-24')
+    ->pickTime('opensAt', new DateTimeImmutable('18:05'))
+    ->pickDateTime('appointment', '2027-03-01T07:45')
+    ->clearPicker('deadline')
+    ->assertPicker('Starts', 'date')
+    ->assertPickerValue('Starts', '2026-12-24')
+    ->assertPickerEmpty('Deadline');
+```
+
+The `pick*` macros take an ISO string *or* any `DateTimeInterface` and
+normalize to the wire shape for that mode before dispatching, so a test using
+a Carbon instance or a full timestamp still sends exactly what the renderer
+would. `assertPicker*` match on the picker's `label`.
+
+Macros register only under a test runner, and only on a core whose
+`TestableComponent` is macroable — the same `method_exists` gate the camera
+plugin uses for its `FakeBridge` macros.
+
 ## Testing
 
 Theme normalization and config write-back are pure PHP — no device, emulator,

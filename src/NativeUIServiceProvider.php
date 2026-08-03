@@ -9,6 +9,7 @@ use Native\Mobile\Edge\Element;
 use Native\Mobile\Edge\Layouts\NativeLayout;
 use Native\Mobile\Edge\NativeComponent;
 use Native\Mobile\Edge\TailwindParser;
+use Native\Mobile\Testing\TestableComponent;
 use Native\Mobile\UI\Builders\Drawer;
 use Native\Mobile\UI\Builders\FloatingOverlay as FloatingOverlayBuilder;
 use Native\Mobile\UI\Concerns\HasFloatingOverlay;
@@ -18,6 +19,7 @@ use Native\Mobile\UI\Console\FontCommand;
 use Native\Mobile\UI\Console\GenerateIconsCommand;
 use Native\Mobile\UI\Elements\FloatingOverlay as FloatingOverlayElement;
 use Native\Mobile\UI\Elements\NativeDrawer;
+use Native\Mobile\UI\Testing\DatePickerMacros;
 
 class NativeUIServiceProvider extends ServiceProvider
 {
@@ -31,6 +33,16 @@ class NativeUIServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Test sugar (pickDate(), assertPickerValue(), ...) — only under a
+        // test runner, and only on a core whose TestableComponent is
+        // macroable. The method_exists guard keeps older cores fatal-free,
+        // matching how the camera plugin gates its FakeBridge macros.
+        if ($this->app->runningUnitTests()
+            && class_exists(TestableComponent::class)
+            && method_exists(TestableComponent::class, 'macro')) {
+            DatePickerMacros::register();
+        }
+
         $this->publishes([
             __DIR__.'/../config/native-ui.php' => config_path('native-ui.php'),
         ], 'native-ui-config');
