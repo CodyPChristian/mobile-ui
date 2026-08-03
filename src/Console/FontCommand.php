@@ -16,8 +16,8 @@ use function Laravel\Prompts\multiselect;
 use function Laravel\Prompts\search;
 use function Laravel\Prompts\select;
 use function Laravel\Prompts\spin;
-use function Laravel\Prompts\text;
 use function Laravel\Prompts\table;
+use function Laravel\Prompts\text;
 
 /**
  * Download and manage Google Fonts for native-ui.
@@ -181,7 +181,7 @@ class FontCommand extends Command
      * prompt for a named fonts-array key for every remaining token.
      *
      * @param  array<string, int>  $downloads  token => file size in bytes
-     * @return list<string>  named config keys for Blade hints (excludes default)
+     * @return list<string> named config keys for Blade hints (excludes default)
      */
     protected function registerDownloadedFonts(string $family, array $downloads): array
     {
@@ -217,7 +217,7 @@ class FontCommand extends Command
                 'config/native-ui.php',
             );
             table(
-                ['<fg=blue>Key</>', '<fg=blue>Value</>', '<fg=blue>Size</>'], 
+                ['<fg=blue>Key</>', '<fg=blue>Value</>', '<fg=blue>Size</>'],
                 $rows
             );
         }
@@ -402,7 +402,7 @@ class FontCommand extends Command
         }
 
         $this->components->twoColumnDetail(
-            "Reset fonts array to <fg=blue>default</> => <fg=blue>System</>",
+            'Reset fonts array to <fg=blue>default</> => <fg=blue>System</>',
             'config/native-ui.php',
         );
 
@@ -531,7 +531,7 @@ class FontCommand extends Command
      * empty array (success) when every face was skipped; null on error.
      *
      * @param  list<string>  $styles
-     * @return ?array<string, int>  token => file size in bytes
+     * @return ?array<string, int> token => file size in bytes
      */
     protected function downloadFamily(string $family, array $styles, string $fontsDir): ?array
     {
