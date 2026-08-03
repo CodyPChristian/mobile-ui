@@ -30,8 +30,8 @@ it('resolves kebab-case leading platform icon attributes', function (string $inp
     $input = new $inputClass;
     $input->applyAttributes([
         'leading-icon' => 'email',
-        'leading-icon-ios' => TextInputAttrIos::Mail,
-        'leading-icon-android' => TextInputAttrAndroid::Mail,
+        'ios-leading-icon' => TextInputAttrIos::Mail,
+        'android-leading-icon' => TextInputAttrAndroid::Mail,
     ]);
 
     $props = $input->getResolvedProps(new CallbackRegistry);
@@ -51,8 +51,8 @@ it('resolves camelCase trailing platform icon attributes', function (string $inp
     $input = new $inputClass;
     $input->applyAttributes([
         'trailingIcon' => 'email',
-        'trailingIconIos' => TextInputAttrIos::Mail,
-        'trailingIconAndroid' => TextInputAttrAndroid::Mail,
+        'iosTrailingIcon' => TextInputAttrIos::Mail,
+        'androidTrailingIcon' => TextInputAttrAndroid::Mail,
     ]);
 
     $props = $input->getResolvedProps(new CallbackRegistry);
@@ -72,8 +72,8 @@ it('keeps the shared icon as the fallback when the platform is unknown', functio
     $input = new $inputClass;
     $input->applyAttributes([
         'leading-icon' => 'email',
-        'leading-icon-ios' => TextInputAttrIos::Mail,
-        'leading-icon-android' => TextInputAttrAndroid::Mail,
+        'ios-leading-icon' => TextInputAttrIos::Mail,
+        'android-leading-icon' => TextInputAttrAndroid::Mail,
     ]);
 
     $props = $input->getResolvedProps(new CallbackRegistry);
