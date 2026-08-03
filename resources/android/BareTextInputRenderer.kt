@@ -11,11 +11,15 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.sp
 import com.nativephp.mobile.ui.nativerender.NativeUINode
 import com.nativephp.mobile.ui.nativerender.argbToComposeColor
@@ -68,29 +72,64 @@ object BareTextInputRenderer {
             theme.onSurfaceVariant
         }
 
-        // Echo-prevention sync — same shape as the outlined variant.
-        var text by remember { mutableStateOf(props.serverValue) }
+        // Echo-prevention sync — same shape as the outlined variant, now over a
+        // TextFieldValue so we own the caret. Initial caret sits at the end of
+        // any pre-filled value (parity with the server-push below).
+        val scope = rememberCoroutineScope()
+        var value by remember { mutableStateOf(TextFieldValue(props.serverValue, TextRange(props.serverValue.length))) }
         var lastSentValue by remember { mutableStateOf(props.serverValue) }
+        var wasFocused by remember { mutableStateOf(false) }
+
+        // Caret / selection reporter — independent of the direct change/submit
+        // dispatchers; no-op unless `on_selection_change` is wired and the
+        // field isn't secure.
+        val selectionReporter = remember(props.onSelectionChangeCb, props.selectionDebounceMs, props.secure) {
+            SelectionReporter(scope = scope, props = props, nodeId = node.id)
+        }
 
         LaunchedEffect(props.serverValue) {
             if (props.serverValue != lastSentValue) {
-                text = props.serverValue
+                // Programmatic server push: replace text, caret to the end, and
+                // flush a single end-caret selection event (deduped) rather
+                // than emitting stale pre-push offsets.
+                val pushed = TextFieldValue(props.serverValue, TextRange(props.serverValue.length))
+                value = pushed
                 lastSentValue = props.serverValue
+                selectionReporter.flush(pushed)
             }
         }
 
         BasicTextField(
-            value = text,
-            onValueChange = { newText ->
-                if (props.disabled || props.readOnly) return@BasicTextField
-                text = newText
-                lastSentValue = newText
-                props.dispatchChange?.invoke(newText)
+            value = value,
+            onValueChange = { newValue ->
+                // Disabled fields never reach here. readOnly may still fire for
+                // caret/selection moves (copy support) — persist those so the
+                // selection is visible/reportable — but never accept a text edit.
+                if (props.disabled) return@BasicTextField
+                val textChanged = newValue.text != value.text
+                if (props.readOnly && textChanged) return@BasicTextField
+                value = newValue
+                // Bare never applied a max_length cap and still doesn't — text
+                // forwards verbatim (LIVE). Selection-only moves don't re-fire
+                // the change event (parity with the String overload).
+                if (textChanged) {
+                    lastSentValue = newValue.text
+                    props.dispatchChange?.invoke(newValue.text)
+                }
+                selectionReporter.onValueChanged(newValue)
             },
             // Full width by default (parity with the iOS renderer's
             // maxWidth: .infinity); an explicit width in `modifier` (FIXED
             // layout mode) still wins since it comes later in the chain.
-            modifier = Modifier.fillMaxWidth().then(modifier),
+            // onFocusChanged is Bare's blur hook (no InteractionSource here):
+            // flush the pending selection on the focused → unfocused edge.
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { state ->
+                    if (wasFocused && !state.isFocused) selectionReporter.flush(value)
+                    wasFocused = state.isFocused
+                }
+                .then(modifier),
             enabled = !props.disabled,
             readOnly = props.readOnly,
             textStyle = LocalTextStyle.current.copy(
@@ -108,7 +147,7 @@ object BareTextInputRenderer {
             ),
             singleLine = !props.multiline,
             decorationBox = { innerTextField ->
-                if (text.isEmpty() && props.placeholder.isNotEmpty()) {
+                if (value.text.isEmpty() && props.placeholder.isNotEmpty()) {
                     Text(
                         text = props.placeholder,
                         color = placeholderColor,
@@ -117,7 +156,11 @@ object BareTextInputRenderer {
                 }
                 innerTextField()
             },
-            keyboardActions = KeyboardActions(onAny = { props.dispatchSubmit?.invoke(text) })
+            keyboardActions = KeyboardActions(onAny = {
+                // Flush the settled caret before the submit event fires.
+                selectionReporter.flush(value)
+                props.dispatchSubmit?.invoke(value.text)
+            })
         )
     }
 }

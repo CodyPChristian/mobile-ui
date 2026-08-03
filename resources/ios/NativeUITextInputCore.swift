@@ -27,6 +27,27 @@ struct NativeUITextInputCore: View {
     @State private var debounceTask: Task<Void, Never>? = nil
     @FocusState private var isFocused: Bool
 
+    // ─── Selection / caret reporting (opt-in via `on_selection_change`) ──────
+    //
+    // Independent of the value/`sync_mode` machinery above: it never touches
+    // `text` / `lastSentValue` / `debounceTask`, and it stays completely dormant
+    // (zero emits, no field-init change) unless `on_selection_change` is set on
+    // a NON-secure field. See the selection helpers at the bottom of the type.
+    //
+    // `selection` is bound to the field only when the feature is enabled, so
+    // when it's off this stays `nil` forever and its `.onChange` never fires.
+    @State private var selection: TextSelection? = nil
+    @State private var selectionTask: Task<Void, Never>? = nil
+    // Latest caret offsets (unicode-scalar / code-point units) taken from a
+    // VALID selection. `text`-change handling only ever clamps these integers
+    // to the new length — it never re-reads a possibly-stale `String.Index`.
+    @State private var selStart: Int = 0
+    @State private var selEnd: Int = 0
+    // Trailing-edge coalescing: `pending` is the value the debounce timer will
+    // emit (recomputed on every trigger); `lastEmitted` powers the dedupe.
+    @State private var pendingSelection: NativeUISelectionPayload? = nil
+    @State private var lastEmittedSelection: NativeUISelectionPayload? = nil
+
     var body: some View {
         let p = node.props
         let placeholder   = p.getString("placeholder")
@@ -44,6 +65,16 @@ struct NativeUITextInputCore: View {
         let syncMode      = p.getString("sync_mode", default: "live")
         let debounceMs    = p.getInt("debounce_ms", default: 300)
         let keepFocus     = p.getBool("keep_focus_on_submit")
+        // Selection reporting is opt-in (0/absent ⇒ off) and never applies to
+        // secure fields. Read exactly like `on_change` / `debounce_ms` above.
+        let onSelectionCb = p.getCallbackId("on_selection_change")
+        // PHP only serializes this prop when explicitly configured, so an
+        // absent prop and an explicit 0 are indistinguishable — both mean
+        // "use the default". Positive values are floored at one frame.
+        // Android resolves the same prop identically (`TextInputShared.kt`) —
+        // keep the two in sync.
+        let selDebounceMs = Self.resolveSelectionDebounceMs(p.getInt("selection_debounce_ms"))
+        let selectionEnabled = onSelectionCb != 0 && !secure
         let fontName      = p.getString("font_name")
         let lineSpacing   = NativeUIFontResolver.lineSpacing(
             px: p.getFloat("line_height_px"),
@@ -58,6 +89,8 @@ struct NativeUITextInputCore: View {
         // iOS runtimes — `.foregroundColor` on the field itself always works.
         Group {
             if secure {
+                // SecureField has no selection binding — caret reporting is
+                // intentionally never available for secure fields.
                 SecureField(placeholder, text: $text)
                     .foregroundColor(contentColor)
                     .focused($isFocused)
@@ -71,15 +104,32 @@ struct NativeUITextInputCore: View {
                 // caps growth. Clamp so a min above the max still renders.
                 let lower = max(minLines, 1)
                 let upper = maxLines > 0 ? max(maxLines, lower) : max(5, lower)
-                TextField(placeholder, text: $text, axis: .vertical)
-                    .lineLimit(lower...upper)
-                    .foregroundColor(contentColor)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .focused($isFocused)
+                // The iOS 18 `selection:` binding is honored on the vertical
+                // (multiline) axis too. Kept as parallel branches so the
+                // feature-off path is byte-for-byte the original field.
+                if selectionEnabled {
+                    TextField(placeholder, text: $text, selection: $selection, axis: .vertical)
+                        .lineLimit(lower...upper)
+                        .foregroundColor(contentColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .focused($isFocused)
+                } else {
+                    TextField(placeholder, text: $text, axis: .vertical)
+                        .lineLimit(lower...upper)
+                        .foregroundColor(contentColor)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .focused($isFocused)
+                }
             } else {
-                TextField(placeholder, text: $text)
-                    .foregroundColor(contentColor)
-                    .focused($isFocused)
+                if selectionEnabled {
+                    TextField(placeholder, text: $text, selection: $selection)
+                        .foregroundColor(contentColor)
+                        .focused($isFocused)
+                } else {
+                    TextField(placeholder, text: $text)
+                        .foregroundColor(contentColor)
+                        .focused($isFocused)
+                }
             }
         }
         .nuiScaledFont(size: textSize, fontName: fontName.isEmpty ? nil : fontName)
@@ -106,6 +156,18 @@ struct NativeUITextInputCore: View {
             if newServerValue != lastSentValue {
                 text = newServerValue
                 lastSentValue = newServerValue
+                // A programmatic push replaces the field wholesale and drops
+                // the caret at the end. Report that immediately, regardless of
+                // focus — matching the Android renderers, which flush the same
+                // end-caret event from their value-sync effect. Without this,
+                // a handler that rewrites the bound model (the mention-
+                // typeahead case) sees a follow-up event on Android and
+                // nothing on iOS. Emitting here also beats letting the
+                // `.onChange(of: text)` path below fire with the STALE cached
+                // offsets clamped to the new length.
+                if selectionEnabled {
+                    emitServerPushSelection(text: newServerValue, cb: onSelectionCb)
+                }
                 // Send-BUTTON path (no `onSubmit`): a send clears the draft to
                 // empty. Keep the keyboard up by re-asserting focus. Opt-in via
                 // `keep-focus-on-submit`; only on a clear-to-empty so ordinary
@@ -119,6 +181,25 @@ struct NativeUITextInputCore: View {
             let filtered = maxLength > 0 ? String(newValue.prefix(maxLength)) : newValue
             if filtered != newValue { text = filtered }
             handleLocalChange(filtered, mode: syncMode, debounceMs: debounceMs, onChangeCb: onChangeCb)
+            // Text edits are also selection triggers. We deliberately do NOT
+            // re-read `selection` here (its `String.Index`es can lag a
+            // programmatic `text` swap by one render); instead we re-clamp the
+            // last known scalar offsets to the new length. When focus is on, the
+            // field's own reconciled selection lands via `.onChange(of: selection)`
+            // right after and the debounce coalesces both into one emit.
+            if selectionEnabled && isFocused {
+                scheduleSelectionEmit(text: filtered, cb: onSelectionCb, debounceMs: selDebounceMs)
+            }
+        }
+        .onChange(of: selection) { _, newSelection in
+            // Caret moves via tap / arrow keys / selection drag arrive here.
+            // A non-nil selection implies the field is focused; a `nil` value
+            // is the no-focus state and must never emit.
+            guard selectionEnabled, let sel = newSelection else { return }
+            guard let (start, end) = offsets(from: sel, in: text) else { return }
+            selStart = start
+            selEnd = end
+            scheduleSelectionEmit(text: text, cb: onSelectionCb, debounceMs: selDebounceMs)
         }
         .onChange(of: isFocused) { _, focused in
             // On blur, flush any pending change — covers both `blur` mode
@@ -127,11 +208,21 @@ struct NativeUITextInputCore: View {
             // focus loss / keyboard dismiss).
             if !focused {
                 flushPending(onChangeCb: onChangeCb)
+                // Flush any coalesced selection emit immediately on blur so the
+                // final caret state isn't stranded in the debounce window.
+                if selectionEnabled {
+                    flushSelection(cb: onSelectionCb)
+                }
             }
         }
         .onSubmit {
             // Submit also acts as a commit point — flush pending, then dispatch.
             flushPending(onChangeCb: onChangeCb)
+            // Selection is flushed BEFORE the submit event so PHP sees the final
+            // caret/selection state ahead of (or alongside) the submit.
+            if selectionEnabled {
+                flushSelection(cb: onSelectionCb)
+            }
             if onSubmitCb != 0 {
                 NativeElementBridge.sendSubmitEvent(onSubmitCb, nodeId: node.id, text: text)
             }
@@ -191,6 +282,133 @@ struct NativeUITextInputCore: View {
             NativeElementBridge.sendTextChangeEvent(onChangeCb, nodeId: node.id, text: value)
         }
     }
+
+    // ─── Selection reporting ─────────────────────────────────────────────────
+    //
+    // Emits over the SAME binary text channel as `on_change`, packing the
+    // selection as `"<start>,<end>\u{1F}<text>"` (U+001F unit separator). The
+    // offsets are unicode code-point (scalar) counts into the current text.
+
+    /// Convert a `TextSelection` (single or multi-range) to clamped
+    /// scalar-offset bounds within `string`. Returns `nil` when the selection
+    /// carries no usable range (empty multi-selection / unknown future case),
+    /// in which case the caller skips the emit.
+    ///
+    /// This is the ONLY place we read a `String.Index` from the selection, and
+    /// it runs exclusively from `.onChange(of: selection)`, where SwiftUI has
+    /// just handed us indices that are valid for the current `text`.
+    private func offsets(from selection: TextSelection, in string: String) -> (Int, Int)? {
+        switch selection.indices {
+        case .selection(let range):
+            return (scalarOffset(of: range.lowerBound, in: string),
+                    scalarOffset(of: range.upperBound, in: string))
+        case .multiSelection(let rangeSet):
+            // Multiple discontiguous ranges: span from the lowest start to the
+            // highest end (contract: min lower / max upper).
+            let ranges = rangeSet.ranges
+            guard let lower = ranges.map(\.lowerBound).min(),
+                  let upper = ranges.map(\.upperBound).max() else {
+                return nil
+            }
+            return (scalarOffset(of: lower, in: string),
+                    scalarOffset(of: upper, in: string))
+        @unknown default:
+            return nil
+        }
+    }
+
+    /// Unicode-scalar (code-point) offset of `index` within `string`.
+    ///
+    /// Scalar count — NOT grapheme count — so a skin-toned 👍🏽 (2 scalars) or a
+    /// combining "e"+◌́ (2 scalars) advances the offset by 2, matching the
+    /// pinned contract.
+    ///
+    /// The clamp bounds a momentarily-stale index to `startIndex...endIndex`;
+    /// it does NOT guarantee scalar ALIGNMENT (an index pointing into the
+    /// middle of a multi-byte sequence stays misaligned). Swift rounds rather
+    /// than traps when measuring distance to a misaligned index in the scalar
+    /// view, so the worst case is an off-by-one offset, not a crash. On the
+    /// normal path — indices SwiftUI just derived from this same string — the
+    /// clamp is a no-op.
+    private func scalarOffset(of index: String.Index, in string: String) -> Int {
+        let scalars = string.unicodeScalars
+        let clamped = min(max(index, string.startIndex), string.endIndex)
+        return scalars.distance(from: scalars.startIndex, to: clamped)
+    }
+
+    /// Default coalescing window for `@selectionChange`, in ms.
+    private static let selectionDebounceDefaultMs = 150
+
+    /// Lower bound for an explicitly configured window — one frame at 60fps.
+    private static let selectionDebounceFloorMs = 16
+
+    /// Resolve `selection_debounce_ms` to an effective window. `<= 0` (which
+    /// includes "prop absent", since PHP only serializes it when configured)
+    /// means the default; positive values are floored at one frame, because
+    /// every emission costs a bridge frame plus a full PHP component
+    /// re-render.
+    private static func resolveSelectionDebounceMs(_ raw: Int) -> Int {
+        raw > 0 ? max(raw, selectionDebounceFloorMs) : selectionDebounceDefaultMs
+    }
+
+    /// Report an end-of-text caret for a programmatic value push, bypassing
+    /// the debounce. Sets the cached offsets first so the `.onChange(of: text)`
+    /// pass that follows recomputes the identical payload and is dropped by
+    /// the dedupe rather than emitting stale offsets.
+    private func emitServerPushSelection(text pushedText: String, cb: Int) {
+        let count = pushedText.unicodeScalars.count
+        selStart = count
+        selEnd = count
+        pendingSelection = NativeUISelectionPayload(text: pushedText, start: count, end: count)
+        flushSelection(cb: cb)
+    }
+
+    /// (Re)arm the trailing-edge debounce. Recomputes the payload from the
+    /// current text + latest offsets (clamped to `0...scalarCount`, `start ≤
+    /// end`) so the timer always emits the most recent state; a fresh trigger
+    /// replaces the pending payload and restarts the clock.
+    private func scheduleSelectionEmit(text currentText: String, cb: Int, debounceMs: Int) {
+        let count = currentText.unicodeScalars.count
+        var start = min(max(selStart, 0), count)
+        var end = min(max(selEnd, 0), count)
+        if start > end { swap(&start, &end) }
+        selStart = start
+        selEnd = end
+        pendingSelection = NativeUISelectionPayload(text: currentText, start: start, end: end)
+
+        selectionTask?.cancel()
+        let delayNanos = UInt64(max(0, debounceMs)) * 1_000_000
+        selectionTask = Task { @MainActor in
+            if delayNanos > 0 {
+                try? await Task.sleep(nanoseconds: delayNanos)
+            }
+            if Task.isCancelled { return }
+            flushSelection(cb: cb)
+        }
+    }
+
+    /// Emit the pending selection now (used by the debounce timer, and directly
+    /// on blur / before submit). Deduped: a payload equal to the last emitted
+    /// `(text, start, end)` is dropped.
+    private func flushSelection(cb: Int) {
+        selectionTask?.cancel()
+        selectionTask = nil
+        guard let payload = pendingSelection else { return }
+        pendingSelection = nil
+        if payload == lastEmittedSelection { return }
+        lastEmittedSelection = payload
+        if cb != 0 {
+            let packed = "\(payload.start),\(payload.end)\u{1F}\(payload.text)"
+            NativeElementBridge.sendTextChangeEvent(cb, nodeId: node.id, text: packed)
+        }
+    }
+}
+
+/// Snapshot of a reported selection — the dedupe key and the debounce payload.
+private struct NativeUISelectionPayload: Equatable {
+    let text: String
+    let start: Int
+    let end: Int
 }
 
 /// Keyboard resolution — accepts string hints ("email", "number", etc.) that

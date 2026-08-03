@@ -6,8 +6,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import com.nativephp.mobile.ui.MaterialIcon
 import com.nativephp.mobile.ui.nativerender.NativeUIBridge
@@ -62,8 +64,10 @@ internal data class TextInputProps(
     val nodeId: Int,
     val onChangeCb: Int,
     val onSubmitCb: Int,
+    val onSelectionChangeCb: Int,
     val syncMode: SyncMode,
     val debounceMs: Int,
+    val selectionDebounceMs: Int,
 ) {
     val enabled: Boolean get() = !disabled && !loading
     val visualTransformation: VisualTransformation
@@ -123,10 +127,33 @@ internal fun parseTextInputProps(node: NativeUINode): TextInputProps {
         nodeId       = node.id,
         onChangeCb   = p.getCallbackId("on_change"),
         onSubmitCb   = p.getCallbackId("on_submit"),
+        onSelectionChangeCb = p.getCallbackId("on_selection_change"),
         syncMode     = parseSyncMode(p.getString("sync_mode", "live")),
         debounceMs   = p.getInt("debounce_ms").let { if (it > 0) it else 300 },
+        selectionDebounceMs = resolveSelectionDebounceMs(p.getInt("selection_debounce_ms")),
     )
 }
+
+/**
+ * Resolve `selection_debounce_ms` to an effective window. PHP only serializes
+ * the prop when explicitly configured, so an absent prop and an explicit `0`
+ * are indistinguishable here — both mean "use the default".
+ *
+ * Positive values are floored at one frame: every emission costs a bridge
+ * frame plus a full PHP component re-render, so a sub-frame window buys
+ * nothing and can saturate the bridge while the caret is dragged.
+ *
+ * iOS resolves the same prop identically ([NativeUITextInputCore.swift]) —
+ * keep the two in sync.
+ */
+internal fun resolveSelectionDebounceMs(raw: Int): Int =
+    if (raw > 0) raw.coerceAtLeast(NUI_SELECTION_DEBOUNCE_FLOOR_MS) else NUI_SELECTION_DEBOUNCE_DEFAULT_MS
+
+/** Default coalescing window for `@selectionChange`, in ms. */
+internal const val NUI_SELECTION_DEBOUNCE_DEFAULT_MS = 150
+
+/** Lower bound for an explicitly configured window — one frame at 60fps. */
+internal const val NUI_SELECTION_DEBOUNCE_FLOOR_MS = 16
 
 /** String hint → M3 KeyboardType. Unknown falls through to text. */
 internal fun resolveKeyboardType(kind: String): KeyboardType = when (kind.lowercase()) {
@@ -205,6 +232,121 @@ internal class TextInputDispatcher(
             NativeUIBridge.sendTextChangeEvent(props.onChangeCb, nodeId, value)
         }
     }
+}
+
+/**
+ * Caret / selection reporter. Independent of the [TextInputDispatcher] model
+ * (sync_mode / debounce_ms) policy — it fires whenever the *text or selection*
+ * changes so PHP can mirror the native caret, coalesced trailing-edge over
+ * [TextInputProps.selectionDebounceMs] and deduped when nothing moved.
+ *
+ * Reuses the existing text-change channel with a distinct callback id: the
+ * payload is packed as `"start,end" + U+001F + text`, where start/end are
+ * Unicode **code-point** offsets into the current text.
+ *
+ * IME / composition policy: we deliberately do NOT skip emissions while a
+ * composing region is active (`value.composition != null`). On soft keyboards
+ * the composing region spans ordinary Latin typing, so hard-skipping it would
+ * suppress exactly the "typing" reports the contract asks for. Instead we lean
+ * on two guards that make composition safe: [codePointSelection] clamps the
+ * (occasionally out-of-bounds) UTF-16 offsets into the current text, and the
+ * trailing-edge debounce + dedup collapse the burst of intermediate composing
+ * states into a single settled emission.
+ */
+internal class SelectionReporter(
+    private val scope: CoroutineScope,
+    private val props: TextInputProps,
+    private val nodeId: Int,
+) {
+    // Opt-in (a callback id must be wired) and never for secure fields — we
+    // must not leak password caret/selection offsets, and the value is masked
+    // anyway. When inactive every entry point below is a cheap early return, so
+    // there is zero behavior change when the prop is absent.
+    private val active: Boolean get() = props.onSelectionChangeCb != 0 && !props.secure
+
+    private var job: Job? = null
+
+    // Last emitted triple, for dedup. `lastText == null` means "nothing sent".
+    private var lastText: String? = null
+    private var lastStart: Int = -1
+    private var lastEnd: Int = -1
+
+    /**
+     * Debounced report of [value]. Call on every text/selection change. Each
+     * call cancels the in-flight timer and schedules a fresh trailing-edge
+     * emission [TextInputProps.selectionDebounceMs] later.
+     */
+    fun onValueChanged(value: TextFieldValue) {
+        if (!active) return
+        val text = value.text
+        val (start, end) = codePointSelection(text, value.selection)
+        job?.cancel()
+        val delayMs = props.selectionDebounceMs.coerceAtLeast(0).toLong()
+        job = scope.launch {
+            delay(delayMs)
+            emit(text, start, end)
+        }
+    }
+
+    /**
+     * Emit [value] immediately, cancelling any pending debounce. Used on blur
+     * and before submit so the settled caret/selection always lands, and for
+     * the programmatic server-push (see the renderers' value-sync effect).
+     */
+    fun flush(value: TextFieldValue) {
+        if (!active) return
+        job?.cancel()
+        job = null
+        val (start, end) = codePointSelection(value.text, value.selection)
+        emit(value.text, start, end)
+    }
+
+    private fun emit(text: String, start: Int, end: Int) {
+        // Dedup: an unchanged (text, start, end) is dropped so idle re-renders
+        // and repeated blur/flush passes don't spam the bridge.
+        if (text == lastText && start == lastStart && end == lastEnd) return
+        lastText = text
+        lastStart = start
+        lastEnd = end
+        // Wire format: "start,end" + U+001F (unit separator) + raw text. The
+        // separator is a control char that cannot collide with typed content.
+        val packed = "$start,$end\u001F$text"
+        NativeUIBridge.sendTextChangeEvent(props.onSelectionChangeCb, nodeId, packed)
+    }
+}
+
+/**
+ * Map a Compose [TextRange] (UTF-16 offsets) to Unicode code-point offsets.
+ *
+ * Both ends are ordered via min/max (a reversed drag reports start > end) and
+ * clamped into `0..text.length` before conversion — Compose can transiently
+ * report offsets past the end during IME composition. `codePointCount` then
+ * collapses surrogate pairs, so e.g. "👍🏽" (4 UTF-16 units) reads as 2 code
+ * points. Guarantees `0 ≤ start ≤ end ≤ codePointCount(text)`.
+ */
+private fun codePointSelection(text: String, selection: TextRange): Pair<Int, Int> {
+    val len = text.length
+    val startUtf16 = selection.min.coerceIn(0, len)
+    val endUtf16 = selection.max.coerceIn(0, len)
+    val start = text.codePointCount(0, startUtf16)
+    val end = text.codePointCount(0, endUtf16)
+    return start to end
+}
+
+/**
+ * Apply the `max_length` cap to an incoming [TextFieldValue], preserving a sane
+ * selection. Keeps the pre-migration `text.take(maxLength)` semantics (UTF-16
+ * units) and additionally clamps the caret/selection into the trimmed text so
+ * it can never point past the end after an over-long paste or IME commit. A
+ * value at or under the cap is returned untouched (selection + composition
+ * intact).
+ */
+internal fun TextFieldValue.cappedTo(maxLength: Int): TextFieldValue {
+    if (maxLength <= 0 || text.length <= maxLength) return this
+    val trimmed = text.take(maxLength)
+    val start = selection.start.coerceIn(0, trimmed.length)
+    val end = selection.end.coerceIn(0, trimmed.length)
+    return TextFieldValue(text = trimmed, selection = TextRange(start, end))
 }
 
 /** Common slot renderers — shared between OutlinedTextField and TextField. */
