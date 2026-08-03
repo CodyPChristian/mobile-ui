@@ -16,14 +16,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Pint is a standalone formatter — it needs no project vendor/, so this
-      # job skips composer entirely.
-      - name: Setup PHP with Pint
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
           coverage: none
-          tools: pint
+
+      # Pint needs no project vendor/ (a full install would drag in the
+      # private nativephp/mobile auth), but install it under the SAME
+      # constraint as composer.json's require-dev so CI and a local
+      # `composer lint` agree on the version instead of drifting apart.
+      - name: Install Pint
+        run: composer global require "laravel/pint:^1.24" --no-interaction
 
       - name: Check code style
         run: pint --test
