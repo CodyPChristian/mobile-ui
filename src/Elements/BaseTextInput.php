@@ -23,7 +23,15 @@ use Native\Mobile\Icon\IosSymbol;
  *   - `prefix`, `suffix`, `leading-icon`, `trailing-icon` (decorations)
  *   - `size`                                          (sm | md | lg)
  *   - `a11y-label`, `a11y-hint`                       (accessibility)
- *   - `@change`, `@submit`                            (callbacks)
+ *   - `@change`, `@submit`, `@selectionChange`        (callbacks)
+ *
+ * `@selectionChange` reports caret / selection movement: the handler is
+ * called with `(string $text, int $selectionStart, int $selectionEnd)`,
+ * offsets in Unicode code points (start === end for a bare caret). Events
+ * are coalesced on the native side — 150ms by default, tunable per input
+ * via `selection-debounce-ms` / `->selectionDebounceMs()`. Never emitted
+ * for `secure` inputs (the callback is not serialized, and the renderers
+ * refuse to emit as well).
  *
  * Subclasses (`OutlinedTextInput`, `FilledTextInput`) only override `$type`
  * so native renderers can dispatch to the right Material3 / SwiftUI primitive.
@@ -36,6 +44,8 @@ abstract class BaseTextInput extends Element
     protected ?string $changeCallback = null;
 
     protected ?string $submitCallback = null;
+
+    protected ?string $selectionChangeCallback = null;
 
     public static function make(): static
     {
@@ -136,6 +146,28 @@ abstract class BaseTextInput extends Element
         }
         if (isset($attrs['debounce-ms']) || isset($attrs['debounceMs'])) {
             $this->debounceMs((int) ($attrs['debounce-ms'] ?? $attrs['debounceMs']));
+        }
+
+        // Selection-change coalescing window. Only serialized when set —
+        // renderers fall back to 50ms when the prop is absent.
+        if (isset($attrs['selection-debounce-ms']) || isset($attrs['selectionDebounceMs'])) {
+            $this->selectionDebounceMs((int) ($attrs['selection-debounce-ms'] ?? $attrs['selectionDebounceMs']));
+        }
+
+        // `@selectionChange` → `_selectionChange` (precompiler rewrite).
+        //
+        // On a core that ships the companion change this is redundant: the
+        // collector's applyCallbacks already routes `_selectionChange` to
+        // `onSelectionChange()` (`method_exists`-gated). It is NOT a fallback
+        // for cores that predate that change — those don't rewrite the
+        // `@selectionChange` directive either, so `_selectionChange` can never
+        // reach us. What it does buy is decoupling: the element works against
+        // a core that has the precompiler half without the collector half,
+        // which is exactly the configuration this repo's CI builds against.
+        // Double-wiring is harmless — both paths set the same property to the
+        // same expression.
+        if (isset($attrs['_selectionChange'])) {
+            $this->onSelectionChange($attrs['_selectionChange']);
         }
     }
 
@@ -352,6 +384,23 @@ abstract class BaseTextInput extends Element
         return $this;
     }
 
+    /**
+     * Coalescing window for `@selectionChange` events, in milliseconds.
+     * When unset the renderers default to 150ms — the prop is only
+     * serialized when explicitly configured.
+     *
+     * Values of 0 or less mean "use the renderer default"; positive values
+     * are floored at one frame (16ms) natively, since every emission costs a
+     * bridge frame plus a full component re-render. Blade:
+     * `selection-debounce-ms` (or `selectionDebounceMs`).
+     */
+    public function selectionDebounceMs(int $ms): static
+    {
+        $this->inputProps['selection_debounce_ms'] = $ms;
+
+        return $this;
+    }
+
     // ── Callbacks ────────────────────────────────────────────────────────────
 
     public function onChange(string $method): static
@@ -368,6 +417,26 @@ abstract class BaseTextInput extends Element
         return $this;
     }
 
+    /**
+     * Caret / selection reporting. The handler is invoked as
+     * `method(string $text, int $selectionStart, int $selectionEnd)` —
+     * offsets in Unicode code points, `start === end` for a plain caret.
+     * Coalesced natively (150ms default; see `selectionDebounceMs()`).
+     *
+     * Never emitted for `secure` inputs: the callback is not serialized at
+     * all when `secure()` is set, and both renderers additionally refuse to
+     * emit. Note that each event carries the FULL current text, independent
+     * of the `native:model` sync mode.
+     *
+     * Blade: `@selectionChange="method"`.
+     */
+    public function onSelectionChange(string $method): static
+    {
+        $this->selectionChangeCallback = $method;
+
+        return $this;
+    }
+
     protected function resolveProps(CallbackRegistry $registry): array
     {
         $props = $this->inputProps;
@@ -377,6 +446,18 @@ abstract class BaseTextInput extends Element
         }
         if ($this->submitCallback !== null) {
             $props['on_submit'] = $registry->register($this->submitCallback);
+        }
+        // Selection reporting is suppressed for `secure` inputs at the SOURCE,
+        // not just in the renderers. Both renderers also refuse to emit, but
+        // that leaves a privacy-relevant invariant restated in every renderer —
+        // including any future one. Never serializing the callback id means a
+        // secure field cannot leak caret offsets no matter what the native side
+        // does with the prop.
+        if ($this->selectionChangeCallback !== null && empty($this->inputProps['secure'])) {
+            // 'text_selection' kind tells NativeComponent::dispatch to decode
+            // the event's TEXT_CHANGE payload ("{start},{end}\x1F{text}") and
+            // call the handler with (text, selectionStart, selectionEnd).
+            $props['on_selection_change'] = $registry->register($this->selectionChangeCallback, 'text_selection');
         }
 
         return $props;
