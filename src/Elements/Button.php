@@ -68,11 +68,25 @@ class Button extends Element
         if (! empty($attrs['loading'])) {
             $this->loading();
         }
-        if (isset($attrs['icon'])) {
-            $this->icon($attrs['icon']);
+        // Platform icon overrides, matching the core elements' convention
+        // (`:ios-icon` / `:android-icon`, with `<icon>`-style `:ios` /
+        // `:android` accepted as aliases). Button is multi-slot so it can't
+        // use HasPlatformIcon; without this the shared name was the only
+        // value reaching icon(), leaving an SF Symbol to render nothing on
+        // Android and a Material ligature nothing on iOS.
+        $iosIcon = $attrs['ios-icon'] ?? $attrs['iosIcon'] ?? $attrs['ios'] ?? null;
+        $androidIcon = $attrs['android-icon'] ?? $attrs['androidIcon'] ?? $attrs['android'] ?? null;
+
+        if (isset($attrs['icon']) || $iosIcon !== null || $androidIcon !== null) {
+            $this->icon($attrs['icon'] ?? null, $iosIcon, $androidIcon);
         }
-        if (isset($attrs['icon-trailing']) || isset($attrs['iconTrailing'])) {
-            $this->iconTrailing($attrs['icon-trailing'] ?? $attrs['iconTrailing']);
+
+        $iosTrailing = $attrs['ios-icon-trailing'] ?? $attrs['iosIconTrailing'] ?? null;
+        $androidTrailing = $attrs['android-icon-trailing'] ?? $attrs['androidIconTrailing'] ?? null;
+        $sharedTrailing = $attrs['icon-trailing'] ?? $attrs['iconTrailing'] ?? null;
+
+        if ($sharedTrailing !== null || $iosTrailing !== null || $androidTrailing !== null) {
+            $this->iconTrailing($sharedTrailing, $iosTrailing, $androidTrailing);
         }
         // Custom font by name — the token is a font file (minus extension)
         // bundled from the app's resources/fonts/ by the copy_assets hook.

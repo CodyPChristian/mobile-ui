@@ -393,6 +393,14 @@ private struct ButtonContent: View {
                 if !icon.isEmpty {
                     Image(systemName: getIconForName(icon))
                         .nuiScaledFont(size: iconSize)
+                        // Pin the layout height to iconSize. SF Symbols report
+                        // per-symbol intrinsic heights at the same point size,
+                        // so without this a control's height depends on which
+                        // symbol it carries — two `size="sm"` buttons side by
+                        // side render ~2pt apart. Height only, never width:
+                        // unlike Material's square grid, SF Symbols have varying
+                        // aspect ratios and a square frame would distort them.
+                        .frame(height: iconSize)
                 }
                 if !label.isEmpty {
                     Text(label).nuiScaledFont(size: textSize, weight: .medium, fontName: fontName).lineSpacing(lineSpacing)
@@ -400,6 +408,7 @@ private struct ButtonContent: View {
                 if !iconTrailing.isEmpty {
                     Image(systemName: getIconForName(iconTrailing))
                         .nuiScaledFont(size: iconSize)
+                        .frame(height: iconSize)
                 }
             }
         }
