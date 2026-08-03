@@ -93,10 +93,8 @@ with a trailing icon button take `trailing-a11y-label` (fluent:
 
 ## Caret & Selection Reporting
 
-> **Requires** a `nativephp/mobile` core that understands the `@selectionChange`
-> directive and the `text_selection` callback kind (shipping alongside this
-> feature). On older cores the Blade directive is ignored and the fluent
-> `->onSelectionChange()` handler will be invoked with the wrong arity.
+> **Requires** `nativephp/mobile` 4.0+, which ships the `text_selection`
+> callback kind — already enforced by this package's composer constraint.
 
 The text inputs (`<native:bare-text-input>`, `<native:outlined-text-input>`,
 `<native:filled-text-input>`) can report caret position and text selection back
