@@ -20,8 +20,10 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.nativephp.mobile.ui.nativerender.NativeUINode
 import com.nativephp.plugins.native_ui.NativeUITheme
@@ -43,18 +45,14 @@ object OutlinedTextInputRenderer {
         val scope = rememberCoroutineScope()
 
         // Echo-prevention sync (plan K). Local state owns what the user is
-        // typing. PHP may push an updated `value` prop at any time; we only
-        // accept it if it diverges from `lastSentValue` — otherwise it's just
-        // the Livewire echo of our own change and would clobber the caret.
-        var text by remember { mutableStateOf(props.serverValue) }
+        // typing — now a TextFieldValue so we also own the caret / selection.
+        // PHP may push an updated `value` prop at any time; we only accept it
+        // if it diverges from `lastSentValue` — otherwise it's just the
+        // Livewire echo of our own change and would clobber text and caret.
+        // Initial caret sits at the end of any pre-filled value (parity with
+        // the server-push behavior below).
+        var value by remember { mutableStateOf(TextFieldValue(props.serverValue, TextRange(props.serverValue.length))) }
         var lastSentValue by remember { mutableStateOf(props.serverValue) }
-
-        LaunchedEffect(props.serverValue) {
-            if (props.serverValue != lastSentValue) {
-                text = props.serverValue
-                lastSentValue = props.serverValue
-            }
-        }
 
         // Sync-mode dispatcher (plan L). Owns the live / blur / debounce
         // decision for outbound change events.
@@ -66,6 +64,26 @@ object OutlinedTextInputRenderer {
                 setLastSent = { lastSentValue = it },
                 getLastSent = { lastSentValue },
             )
+        }
+
+        // Caret / selection reporter. Independent of the sync-mode dispatcher;
+        // no-op unless `on_selection_change` is wired and the field isn't secure.
+        val selectionReporter = remember(props.onSelectionChangeCb, props.selectionDebounceMs, props.secure) {
+            SelectionReporter(scope = scope, props = props, nodeId = node.id)
+        }
+
+        LaunchedEffect(props.serverValue) {
+            if (props.serverValue != lastSentValue) {
+                // Programmatic server push: replace the text and drop the caret
+                // at the very end (parity with the pre-migration String sync,
+                // which reset the field wholesale). We do NOT emit stale
+                // pre-push offsets; instead we flush a single end-caret
+                // selection event (deduped) so PHP mirrors the new caret.
+                val pushed = TextFieldValue(props.serverValue, TextRange(props.serverValue.length))
+                value = pushed
+                lastSentValue = props.serverValue
+                selectionReporter.flush(pushed)
+            }
         }
 
         // Observe focus via the field's InteractionSource; we use that edge
@@ -80,7 +98,12 @@ object OutlinedTextInputRenderer {
                     is FocusInteraction.Focus   -> focusStack += interaction
                     is FocusInteraction.Unfocus -> {
                         focusStack.remove(interaction.focus)
-                        if (focusStack.isEmpty()) dispatcher.onBlur(text)
+                        if (focusStack.isEmpty()) {
+                            // Flush the pending selection first so the final
+                            // caret lands, then flush any deferred text change.
+                            selectionReporter.flush(value)
+                            dispatcher.onBlur(value.text)
+                        }
                     }
                     else -> { /* ignore press/hover/drag */ }
                 }
@@ -97,11 +120,19 @@ object OutlinedTextInputRenderer {
         val lineHeight = nuiLineHeightUnit(props.lineHeightPx, props.lineHeight, textSize.value)
 
         OutlinedTextField(
-            value = text,
+            value = value,
             onValueChange = { new ->
-                val filtered = if (props.maxLength > 0) new.take(props.maxLength) else new
-                text = filtered
-                dispatcher.onTextChanged(filtered)
+                // maxLength now also clamps the caret/selection into the
+                // trimmed text (see `cappedTo`).
+                val capped = new.cappedTo(props.maxLength)
+                val textChanged = capped.text != value.text
+                value = capped
+                // Only forward *text* changes to the model dispatcher — the
+                // String overload never invoked onValueChange for caret-only
+                // moves, so selection-only updates must not re-fire change
+                // events. Text-change dispatch still receives the plain String.
+                if (textChanged) dispatcher.onTextChanged(capped.text)
+                selectionReporter.onValueChanged(capped)
             },
             // Full width by default (parity with the iOS renderer's
             // maxWidth: .infinity); an explicit width in `modifier` (FIXED
@@ -125,7 +156,11 @@ object OutlinedTextInputRenderer {
             minLines = props.minLines,
             visualTransformation = props.visualTransformation,
             keyboardOptions = keyboardOptionsFor(props),
-            keyboardActions = KeyboardActions(onDone = { dispatcher.onSubmit(text) }),
+            keyboardActions = KeyboardActions(onDone = {
+                // Flush the settled caret before the submit event fires.
+                selectionReporter.flush(value)
+                dispatcher.onSubmit(value.text)
+            }),
             textStyle = TextStyle(fontSize = textSize, color = theme.onSurface, fontFamily = customFontFamily, lineHeight = lineHeight),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = theme.onSurface,
