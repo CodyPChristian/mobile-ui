@@ -124,6 +124,7 @@ class Checkbox extends Element
 
         return $layout;
     }
+
     /** Supporting/helper text under the control (error-colored when error()). */
     public function supporting(string $text): static
     {
@@ -139,5 +140,4 @@ class Checkbox extends Element
 
         return $this;
     }
-
 }

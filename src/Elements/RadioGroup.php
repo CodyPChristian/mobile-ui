@@ -108,6 +108,7 @@ class RadioGroup extends Element
     {
         return [];
     }
+
     /** Supporting/helper text under the control (error-colored when error()). */
     public function supporting(string $text): static
     {
@@ -123,5 +124,4 @@ class RadioGroup extends Element
 
         return $this;
     }
-
 }
