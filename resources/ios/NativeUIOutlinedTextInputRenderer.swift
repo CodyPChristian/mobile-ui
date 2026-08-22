@@ -111,7 +111,8 @@ struct NativeUIOutlinedTextInputRenderer: View {
                     node: node,
                     textSize: metrics.textSize,
                     contentColor: disabled ? fieldTextColor.opacity(0.6) : fieldTextColor,
-                    tintColor: isError ? theme.destructive : theme.primary
+                    tintColor: isError ? theme.destructive : theme.primary,
+                    supportsRevealToggle: true
                 )
                 .frame(maxWidth: .infinity, alignment: .leading)
 
