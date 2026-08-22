@@ -8,7 +8,7 @@
         {
             "type": "text",
             "element": "Native\\Mobile\\Edge\\Elements\\Text",
-            "blade": "Native\\Mobile\\Edge\\Components\\Text",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Text",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.TextRenderer",
             "ios_renderer": "NativeUITextRenderer",
             "self_closing": true
@@ -16,7 +16,7 @@
         {
             "type": "image",
             "element": "Native\\Mobile\\Edge\\Elements\\Image",
-            "blade": "Native\\Mobile\\Edge\\Components\\Image",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Image",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.ImageRenderer",
             "ios_renderer": "NativeUIImageRenderer",
             "self_closing": true
@@ -24,7 +24,7 @@
         {
             "type": "column",
             "element": "Native\\Mobile\\Edge\\Elements\\Column",
-            "blade": "Native\\Mobile\\Edge\\Components\\Column",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Column",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.ColumnRenderer",
             "ios_renderer": "NativeUIColumnRenderer",
             "self_closing": false
@@ -32,7 +32,7 @@
         {
             "type": "row",
             "element": "Native\\Mobile\\Edge\\Elements\\Row",
-            "blade": "Native\\Mobile\\Edge\\Components\\Row",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Row",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.RowRenderer",
             "ios_renderer": "NativeUIRowRenderer",
             "self_closing": false
@@ -40,7 +40,7 @@
         {
             "type": "stack",
             "element": "Native\\Mobile\\Edge\\Elements\\Stack",
-            "blade": "Native\\Mobile\\Edge\\Components\\Stack",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Stack",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.StackRenderer",
             "ios_renderer": "NativeUIStackRenderer",
             "self_closing": false
@@ -48,7 +48,7 @@
         {
             "type": "scroll_view",
             "element": "Native\\Mobile\\Edge\\Elements\\ScrollView",
-            "blade": "Native\\Mobile\\Edge\\Components\\ScrollView",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\ScrollView",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.ScrollViewRenderer",
             "ios_renderer": "NativeUIScrollViewRenderer",
             "self_closing": false
@@ -56,7 +56,7 @@
         {
             "type": "lazy_grid",
             "element": "Native\\Mobile\\Edge\\Elements\\LazyGrid",
-            "blade": "Native\\Mobile\\Edge\\Components\\LazyGrid",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\LazyGrid",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.LazyGridRenderer",
             "ios_renderer": "NativeUILazyGridRenderer",
             "self_closing": false
@@ -64,7 +64,7 @@
         {
             "type": "gesture_area",
             "element": "Native\\Mobile\\Edge\\Elements\\GestureArea",
-            "blade": "Native\\Mobile\\Edge\\Components\\GestureArea",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\GestureArea",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.GestureAreaRenderer",
             "ios_renderer": "NativeUIGestureAreaRenderer",
             "self_closing": false
@@ -72,7 +72,7 @@
         {
             "type": "refreshable",
             "element": "Native\\Mobile\\Edge\\Elements\\Refreshable",
-            "blade": "Native\\Mobile\\Edge\\Components\\Refreshable",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Refreshable",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.RefreshableRenderer",
             "ios_renderer": "NativeUIRefreshableRenderer",
             "self_closing": false
@@ -80,7 +80,7 @@
         {
             "type": "pressable",
             "element": "Native\\Mobile\\Edge\\Elements\\Pressable",
-            "blade": "Native\\Mobile\\Edge\\Components\\Pressable",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Pressable",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.PressableRenderer",
             "ios_renderer": "NativeUIPressableRenderer",
             "self_closing": false
@@ -88,7 +88,7 @@
         {
             "type": "canvas",
             "element": "Native\\Mobile\\Edge\\Elements\\Canvas",
-            "blade": "Native\\Mobile\\Edge\\Components\\Canvas",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Canvas",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.CanvasRenderer",
             "ios_renderer": "NativeUICanvasRenderer",
             "self_closing": false
@@ -96,7 +96,7 @@
         {
             "type": "spacer",
             "element": "Native\\Mobile\\Edge\\Elements\\Spacer",
-            "blade": "Native\\Mobile\\Edge\\Components\\Spacer",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Spacer",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.SpacerRenderer",
             "ios_renderer": "NativeUISpacerRenderer",
             "self_closing": true
@@ -104,7 +104,7 @@
         {
             "type": "divider",
             "element": "Native\\Mobile\\Edge\\Elements\\Divider",
-            "blade": "Native\\Mobile\\Edge\\Components\\Divider",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Divider",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.DividerRenderer",
             "ios_renderer": "NativeUIDividerRenderer",
             "self_closing": true
@@ -112,7 +112,7 @@
         {
             "type": "rect",
             "element": "Native\\Mobile\\Edge\\Elements\\Rect",
-            "blade": "Native\\Mobile\\Edge\\Components\\Rect",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Rect",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.RectRenderer",
             "ios_renderer": "NativeUIRectRenderer",
             "self_closing": true
@@ -120,7 +120,7 @@
         {
             "type": "circle",
             "element": "Native\\Mobile\\Edge\\Elements\\Circle",
-            "blade": "Native\\Mobile\\Edge\\Components\\Circle",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Circle",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.CircleRenderer",
             "ios_renderer": "NativeUICircleRenderer",
             "self_closing": true
@@ -128,7 +128,7 @@
         {
             "type": "line",
             "element": "Native\\Mobile\\Edge\\Elements\\Line",
-            "blade": "Native\\Mobile\\Edge\\Components\\Line",
+            "blade": "Native\\Mobile\\Edge\\Components\\Native\\Line",
             "android_renderer": "com.nativephp.plugins.native_ui.ui.LineRenderer",
             "ios_renderer": "NativeUILineRenderer",
             "self_closing": true
