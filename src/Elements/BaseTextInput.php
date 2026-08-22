@@ -269,6 +269,9 @@ abstract class BaseTextInput extends Element
      *
      * Unknown values are ignored natively and fall back to the derived
      * behaviour rather than erroring.
+     *
+     * IGNORED on a `secure()` field, which always resolves to no
+     * capitalization (and no autocorrect). See `secure()`.
      */
     public function autocapitalize(string $mode): static
     {
@@ -277,6 +280,14 @@ abstract class BaseTextInput extends Element
         return $this;
     }
 
+    /**
+     * Mask the field's contents (password entry).
+     *
+     * Beyond masking, `secure` carries the typing behavior a secret needs:
+     * capitalization and autocorrect are both forced off natively, ahead of
+     * any `autocapitalize()` the author set, and `@selectionChange` is never
+     * serialized at all (see `onSelectionChange()`).
+     */
     public function secure(bool $value = true): static
     {
         $this->inputProps['secure'] = $value;
