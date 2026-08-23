@@ -569,7 +569,24 @@ private struct RevealToggleModifier: ViewModifier {
                     Image(systemName: revealed ? "eye.slash.fill" : "eye.fill")
                         .nuiScaledFont(size: max(13, textSize - 2))
                         .foregroundStyle(contentColor.opacity(0.85))
-                        .nuiMinTapTarget()
+                        // Deliberately NOT `.nuiMinTapTarget()`. That puts a
+                        // `minHeight: 44` on the icon, and this HStack sits
+                        // INSIDE the field's content — the variant renderer adds
+                        // its own vertical padding around the whole thing — so a
+                        // 44pt floor here makes a revealable field far taller
+                        // than a plain one. Measured on a login form: 42.7pt for
+                        // the email field, 64.7pt for the password field beside
+                        // it. Half again as tall, and it reads as a layout bug.
+                        //
+                        // `maxHeight: .infinity` fills the row rather than
+                        // demanding a height, so the field keeps exactly the
+                        // height it had before it grew an eye (re-measured at
+                        // 40.7pt, matching the same field with the toggle off).
+                        // The tap target is still >= 44 wide by the full height
+                        // of the field, and `contentShape` keeps all of that
+                        // tappable instead of just the glyph.
+                        .frame(minWidth: 44, maxHeight: .infinity)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 // Announce the ACTION the tap performs, not the current state.
