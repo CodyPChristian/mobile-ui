@@ -260,6 +260,7 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.secondary : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onSecondary : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(fill: theme.secondary, stroke: theme.onSecondary, surface: theme.surface, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -273,6 +274,7 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.destructive : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onDestructive : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(fill: theme.destructive, stroke: theme.onDestructive, surface: theme.surface, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -283,6 +285,7 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.success : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onSuccess : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(fill: theme.success, stroke: theme.onSuccess, surface: theme.surface, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -302,6 +305,7 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.accent : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onAccent : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(fill: theme.accent, stroke: theme.onAccent, surface: theme.surface, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -312,6 +316,7 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.primary : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onPrimary : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(fill: theme.primary, stroke: theme.onPrimary, surface: theme.surface, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -425,6 +430,47 @@ private struct A11yLoadingValueModifier: ViewModifier {
     func body(content: Content) -> some View {
         if loading { content.accessibilityValue("Loading") }
         else { content }
+    }
+}
+
+/// A filled button whose tint matches the surface it sits on has no visible
+/// edge — it reads as text, not a control. That happens whenever a site's
+/// palette resolves `primary` (or another variant token) to the same colour as
+/// `surface`; Berkley Chapel's CMS returns #F4F1EC for both, so "Save changes"
+/// vanished into its card.
+///
+/// Rather than override the brand colour, outline the button in its own label
+/// colour so the shape reads while the fill stays exactly what the site asked
+/// for. Only engages on a near-match, so a normal palette is untouched.
+private struct SurfaceCollisionOutline: ViewModifier {
+    let fill: Color
+    let stroke: Color
+    let surface: Color
+    let radius: CGFloat
+
+    private func components(_ c: Color) -> (CGFloat, CGFloat, CGFloat) {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(c).getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r, g, b)
+    }
+
+    private var collides: Bool {
+        let (r1, g1, b1) = components(fill)
+        let (r2, g2, b2) = components(surface)
+        // Sum of channel deltas; ~0.12 catches "same colour to the eye"
+        // without firing on merely light-on-light.
+        return abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2) < 0.12
+    }
+
+    func body(content: Content) -> some View {
+        if collides {
+            content.overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(stroke.opacity(0.45), lineWidth: 1)
+            )
+        } else {
+            content
+        }
     }
 }
 
