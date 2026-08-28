@@ -114,6 +114,11 @@ struct NativeUIListRenderer: View {
             .equatable()
             .frame(maxWidth: .infinity, alignment: .leading)
             .listRowInsets(EdgeInsets())
+            // Rows carry SwiftUI's opaque system fill, which paints over the
+            // list's background — so hiding the scroll background alone still
+            // left a white sheet on a themed screen. Clear the row and let
+            // whatever the row's own content declares show through.
+            .listRowBackground(Color.clear)
             // Drive dividers from the bottom edge only; always hide the top
             // edge. The top separator renders solely on a section's first row,
             // so hiding it removes the stray full-width line that otherwise
@@ -215,22 +220,27 @@ private struct GroupedOrPlainListStyle: ViewModifier {
 
 /// SwiftUI's List paints the system (grouped) background and ignores the
 /// node's own background style, so a themed screen (`bg-theme-background`)
-/// renders on the stock gray instead of the app's palette. When the node
-/// declares a background, hide the system scroll background and paint the
-/// node's color — matching how every other container element behaves.
+/// renders on the stock gray instead of the app's palette. Hide the system
+/// scroll background and paint the node's color — matching how every other
+/// container element behaves.
+///
+/// With no declared background the theme's own `background` is used, so a
+/// list-based screen matches a scroll-view-based one without every screen
+/// having to repeat `bg-theme-background` on its `<list>`. A themed app is
+/// the norm here; the stock grouped gray was never the intent.
 private struct ListBackgroundModifier: ViewModifier {
     let node: NativeUINode
+    @ObservedObject private var themeStore = NativeUITheme.shared
     @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         let darkBg = colorScheme == .dark ? node.props.getColor("dark_bg_color", default: 0) : 0
         let argb = darkBg != 0 ? darkBg : (node.style?.bgColor ?? 0)
-        if argb != 0 {
-            content
-                .scrollContentBackground(.hidden)
-                .background(Color(argb: argb))
-        } else {
-            content
-        }
+
+        content
+            .scrollContentBackground(.hidden)
+            .background(argb != 0
+                ? Color(argb: argb)
+                : themeStore.resolve(for: colorScheme).background)
     }
 }
