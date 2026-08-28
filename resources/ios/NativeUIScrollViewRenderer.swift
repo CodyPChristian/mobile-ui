@@ -306,7 +306,11 @@ extension EnvironmentValues {
 /// Give the scroll view the same reach — but only when the node actually
 /// declares a background, so a screen that never asked for one is untouched
 /// and keeps the system default.
-private struct ScrollViewBackgroundModifier: ViewModifier {
+///
+/// Internal rather than private: `<refreshable>` and a vertical `<lazy-grid>`
+/// build their own `ScrollView` in their own renderers and have exactly the
+/// same problem, so they share this.
+struct ScrollViewBackgroundModifier: ViewModifier {
     let node: NativeUINode
     @Environment(\.colorScheme) private var colorScheme
 

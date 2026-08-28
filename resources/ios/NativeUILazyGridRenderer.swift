@@ -43,6 +43,7 @@ struct NativeUILazyGridRenderer: View {
                 }
             }
             .scrollDismissesKeyboard(.interactively)
+            .modifier(ScrollViewBackgroundModifier(node: node))
         }
     }
 }
