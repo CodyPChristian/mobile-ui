@@ -256,11 +256,12 @@ struct NativeUIButtonRenderer: View {
             // No renderer-imposed alpha: transparency belongs to the theme
             // config (e.g. `'secondary' => 'fuchsia-500/70'`). `.bordered`
             // would render the tint at ~15% opacity and lose the label.
+            let tint = resolveButtonTint(fill: theme.secondary, on: theme.onSecondary, theme: theme)
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.borderedProminent)
-                .tint(enabled ? theme.secondary : theme.surfaceVariant)
-                .foregroundStyle(enabled ? theme.onSecondary : theme.onSurfaceVariant)
-                .modifier(SurfaceCollisionOutline(fill: theme.secondary, stroke: theme.onSecondary, surface: theme.surface, radius: 12))
+                .tint(enabled ? tint.fill : theme.surfaceVariant)
+                .foregroundStyle(enabled ? tint.foreground : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(active: tint.outline, stroke: tint.foreground, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -270,11 +271,15 @@ struct NativeUIButtonRenderer: View {
             // Note: not using `role: .destructive` — it fights `.tint()` on
             // `.borderedProminent` and can render as the system destructive
             // color rather than the theme's destructive token.
+            // Semantic colour: never substituted, only outlined. A slate
+            // "Delete" would read as an ordinary action.
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.destructive : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onDestructive : theme.onSurfaceVariant)
-                .modifier(SurfaceCollisionOutline(fill: theme.destructive, stroke: theme.onDestructive, surface: theme.surface, radius: 12))
+                .modifier(SurfaceCollisionOutline(
+                    active: nativeUIColorsCollide(theme.destructive, theme.surface),
+                    stroke: theme.onDestructive, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -285,7 +290,9 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.success : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onSuccess : theme.onSurfaceVariant)
-                .modifier(SurfaceCollisionOutline(fill: theme.success, stroke: theme.onSuccess, surface: theme.surface, radius: 12))
+                .modifier(SurfaceCollisionOutline(
+                    active: nativeUIColorsCollide(theme.success, theme.surface),
+                    stroke: theme.onSuccess, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -305,18 +312,21 @@ struct NativeUIButtonRenderer: View {
                 .buttonStyle(.borderedProminent)
                 .tint(enabled ? theme.accent : theme.surfaceVariant)
                 .foregroundStyle(enabled ? theme.onAccent : theme.onSurfaceVariant)
-                .modifier(SurfaceCollisionOutline(fill: theme.accent, stroke: theme.onAccent, surface: theme.surface, radius: 12))
+                .modifier(SurfaceCollisionOutline(
+                    active: nativeUIColorsCollide(theme.accent, theme.surface),
+                    stroke: theme.onAccent, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
                 .modifier(A11yHintModifier(hint: a11yHint))
 
         default: // "primary" and any unknown value
+            let tint = resolveButtonTint(fill: theme.primary, on: theme.onPrimary, theme: theme)
             Button(action: action) { content.fillWidthIfRequested(node) }
                 .buttonStyle(.borderedProminent)
-                .tint(enabled ? theme.primary : theme.surfaceVariant)
-                .foregroundStyle(enabled ? theme.onPrimary : theme.onSurfaceVariant)
-                .modifier(SurfaceCollisionOutline(fill: theme.primary, stroke: theme.onPrimary, surface: theme.surface, radius: 12))
+                .tint(enabled ? tint.fill : theme.surfaceVariant)
+                .foregroundStyle(enabled ? tint.foreground : theme.onSurfaceVariant)
+                .modifier(SurfaceCollisionOutline(active: tint.outline, stroke: tint.foreground, radius: 12))
                 .controlSize(metrics.controlSize)
                 .disabled(!enabled)
                 .modifier(A11yLabelModifier(label: a11yLabel))
@@ -433,37 +443,78 @@ private struct A11yLoadingValueModifier: ViewModifier {
     }
 }
 
-/// A filled button whose tint matches the surface it sits on has no visible
-/// edge — it reads as text, not a control. That happens whenever a site's
-/// palette resolves `primary` (or another variant token) to the same colour as
-/// `surface`; Berkley Chapel's CMS returns #F4F1EC for both, so "Save changes"
+/// Sum of channel deltas. Below ~0.12 two colours are the same to the eye,
+/// without firing on merely light-on-light.
+private func nativeUIColorsCollide(_ a: Color, _ b: Color) -> Bool {
+    func components(_ c: Color) -> (CGFloat, CGFloat, CGFloat) {
+        var r: CGFloat = 0, g: CGFloat = 0, bl: CGFloat = 0, al: CGFloat = 0
+        UIColor(c).getRed(&r, green: &g, blue: &bl, alpha: &al)
+        return (r, g, bl)
+    }
+    let (r1, g1, b1) = components(a)
+    let (r2, g2, b2) = components(b)
+    return abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2) < 0.12
+}
+
+/// The fill and label a filled button should actually draw with.
+private struct ButtonTint {
+    let fill: Color
+    let foreground: Color
+    let outline: Bool
+}
+
+/// A filled button whose tint matches what it sits on has no visible edge — it
+/// reads as text, not a control. That happens whenever a site's palette
+/// resolves `primary` (or another variant token) to the same colour as
+/// `surface`; Berkley Chapel's CMS returns #F4F1EC for both, so "Sign in"
 /// vanished into its card.
 ///
-/// Rather than override the brand colour, outline the button in its own label
-/// colour so the shape reads while the fill stays exactly what the site asked
-/// for. Only engages on a near-match, so a normal palette is untouched.
+/// On a collision, substitute a token that contrasts and keep the button
+/// filled — an outlined button reads as secondary, which is wrong for the
+/// screen's main action.
+///
+/// THE TWO-PARENT GUARD: the renderer cannot see what it is actually sitting
+/// on. `NodeView` — which paints container backgrounds — lives in the host
+/// package, so no ambient-surface value reaches here, and a button may be on a
+/// card (`surface`) or directly on the page (`background`). A substitute is
+/// therefore only accepted when it contrasts with BOTH. Without that guard
+/// Berkley Chapel breaks: its `secondary` (#314E5E) contrasts beautifully with
+/// the cream card and is exactly its page background, so every button on the
+/// canvas would have gone slate-on-slate — worse than the collision being
+/// fixed. `on-surface` then wins there: near-black reads on both.
+///
+/// Falls back to outlining in the label colour if nothing qualifies, which
+/// preserves the brand fill rather than guessing. Only engages on a near-match,
+/// so a normal palette is untouched.
+private func resolveButtonTint(fill: Color, on: Color, theme: NativeUITokens) -> ButtonTint {
+    guard nativeUIColorsCollide(fill, theme.surface) else {
+        return ButtonTint(fill: fill, foreground: on, outline: false)
+    }
+
+    let candidates: [(Color, Color)] = [
+        (theme.secondary, theme.onSecondary),
+        // Contrast-guaranteed against the surface by construction.
+        (theme.onSurface, theme.surface),
+    ]
+
+    for (candidate, label) in candidates
+    where !nativeUIColorsCollide(candidate, theme.surface)
+        && !nativeUIColorsCollide(candidate, theme.background)
+        && !nativeUIColorsCollide(candidate, label) {
+        return ButtonTint(fill: candidate, foreground: label, outline: false)
+    }
+
+    return ButtonTint(fill: fill, foreground: on, outline: true)
+}
+
+/// Last-resort edge for a colliding button whose fill we chose not to replace.
 private struct SurfaceCollisionOutline: ViewModifier {
-    let fill: Color
+    let active: Bool
     let stroke: Color
-    let surface: Color
     let radius: CGFloat
 
-    private func components(_ c: Color) -> (CGFloat, CGFloat, CGFloat) {
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        UIColor(c).getRed(&r, green: &g, blue: &b, alpha: &a)
-        return (r, g, b)
-    }
-
-    private var collides: Bool {
-        let (r1, g1, b1) = components(fill)
-        let (r2, g2, b2) = components(surface)
-        // Sum of channel deltas; ~0.12 catches "same colour to the eye"
-        // without firing on merely light-on-light.
-        return abs(r1 - r2) + abs(g1 - g2) + abs(b1 - b2) < 0.12
-    }
-
     func body(content: Content) -> some View {
-        if collides {
+        if active {
             content.overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .strokeBorder(stroke.opacity(0.45), lineWidth: 1)
