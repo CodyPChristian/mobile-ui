@@ -238,7 +238,12 @@ struct NativeDrawerHost<Content: View>: View {
         // row fell through to the system colour — white on a light-pinned app,
         // regardless of the site's palette. A themed panel that turns white
         // halfway down reads as a rendering fault, because it is one.
-        .background(theme.background)
+        //
+        // ignoresSafeArea on the FILL, not the panel: the content above is
+        // padded down past the status bar deliberately, but the colour behind
+        // it still has to run to the top edge. Without this the inset strip
+        // stayed white and the fix simply moved the seam upward.
+        .background(theme.background.ignoresSafeArea())
     }
 
     // MARK: - Gesture settling
